@@ -182,7 +182,6 @@
  END_DOC
  integer :: i,j
  double precision :: mos_array_extra(mo_num), r(3)
- print*,'coucou'
  !$OMP PARALLEL DO &
  !$OMP DEFAULT (NONE)  &
  !$OMP PRIVATE (i,r,mos_array_extra,j) & 
@@ -197,7 +196,6 @@
   enddo
  enddo
  !$OMP END PARALLEL DO
- print*,'coucou fin'
  END_PROVIDER
 
 
