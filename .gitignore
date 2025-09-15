@@ -12,3 +12,23 @@ src/*/.gitignore
 ezfio_interface.irp.f
 share
 *.swp
+# git submodules
+/external/ezfio/
+/external/irpf90/
+# Other files produced by compilation
+etc/00.qp_root.rc
+# Ignore everything inside plugins
+/plugins/*
+# Except changes to default local plugins and README file
+!/plugins/local/
+!/plugins/README.rst
+# Ignore everything inside each plugin directory 
+#(links to other directories, executables, automatic Makefiles)
+/plugins/*/*
+# Except changes to code
+!/plugins/*/*.irp.f
+!/plugins/*/*.f90
+!/plugins/*/*.F90
+!/plugins/*/NEED
+
+
