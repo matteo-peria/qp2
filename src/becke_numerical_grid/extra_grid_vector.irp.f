@@ -10,12 +10,15 @@ BEGIN_PROVIDER [integer, n_points_extra_final_grid]
   implicit none
   integer :: i, j, k, l
 
+  write(6,*) 'PROVIDING n_points_extra_final_grid ...'
+
   if (read_extra_grid)then
-   print*,'Reading number of extra grid points '
-   call ezfio_get_becke_numerical_grid_n_points_extra_final_grid(i)
-   n_points_extra_final_grid = i
+    print*,'... reading number of extra grid points '
+    call ezfio_get_becke_numerical_grid_n_points_extra_final_grid(i)
+    n_points_extra_final_grid = i
+    print*, ' ... n of points = ', n_points_extra_final_grid
   else
-    print*,'Computing number of extra grid points and weights based on a sperical grid'
+    print*,'... through pruning of PROVIDER final_weight_at_r_extra'
     n_points_extra_final_grid = 0
     do j = 1, nucl_num
       do i = 1, n_points_extra_radial_grid -1
@@ -27,12 +30,14 @@ BEGIN_PROVIDER [integer, n_points_extra_final_grid]
         enddo
       enddo
     enddo
-   print*, ' n max point               = ', n_points_extra_integration_angular*(n_points_extra_radial_grid*nucl_num - 1)
+    call write_int(6, n_points_extra_integration_angular*(n_points_extra_radial_grid*nucl_num - 1), 'N points before pruning')
+    call write_int(6, n_points_extra_final_grid, 'N points after pruning')
   endif
-  print*, ' n_points_extra_final_grid = ', n_points_extra_final_grid
-  if(write_extra_grid)then
-   print*,'Writing number of extra grid points and weights based on a sperical grid'
-   call ezfio_set_becke_numerical_grid_n_points_extra_final_grid(n_points_extra_final_grid)
+
+
+  if (write_extra_grid) then
+    print*,'Writing number of extra grid points and weights based on a sperical grid'
+    call ezfio_set_becke_numerical_grid_n_points_extra_final_grid(n_points_extra_final_grid)
   endif
 
 END_PROVIDER

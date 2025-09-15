@@ -8,6 +8,10 @@ BEGIN_PROVIDER [integer, n_points_final_grid]
   implicit none
   integer :: i, j, k, l
 
+
+  write(6,*) 'PROVIDING n_points_final_grid ...'
+  write(6,*) '... through pruning of PROVIDER final_weight_at_r'
+
   n_points_final_grid = 0
   do j = 1, nucl_num
     do i = 1, n_points_radial_grid -1
@@ -19,12 +23,14 @@ BEGIN_PROVIDER [integer, n_points_final_grid]
       enddo
     enddo
   enddo
+  call write_int(6, n_points_integration_angular*(n_points_radial_grid*nucl_num-1), 'N points before pruning')
+  call write_int(6, n_points_final_grid, 'N points after pruning')
 
-  print*,' n_points_final_grid = ', n_points_final_grid
-  print*,' n max point         = ', n_points_integration_angular*(n_points_radial_grid*nucl_num - 1)
- ! no reason to write in the EZFIO file the number of grid points ?
-!  call ezfio_set_becke_numerical_grid_n_points_final_grid(n_points_final_grid)
-
+!!!  print*,' n_points_final_grid = ', n_points_final_grid
+!!!  print*,' n max point         = ', n_points_integration_angular*(n_points_radial_grid*nucl_num - 1)
+!!! ! no reason to write in the EZFIO file the number of grid points ?
+!!!!  call ezfio_set_becke_numerical_grid_n_points_final_grid(n_points_final_grid)
+!!!
 END_PROVIDER
 
 ! ---

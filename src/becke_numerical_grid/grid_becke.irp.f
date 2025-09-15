@@ -36,9 +36,16 @@
     n_points_radial_grid         = my_n_pt_r_grid
     n_points_integration_angular = my_n_pt_a_grid
   endif
+  
+  !if (verbose) then 
+  !  print*, " n_points_radial_grid         = ", n_points_radial_grid
+  !  print*, " n_points_integration_angular = ", n_points_integration_angular
+  write(6,*) 'Grid parameters:'
+  call write_int(6, n_points_radial_grid, 'N radial points ')
+  call write_int(6, n_points_integration_angular, 'N angular points') 
+  write(6,*) ''      
 
-  print*, " n_points_radial_grid         = ", n_points_radial_grid
-  print*, " n_points_integration_angular = ", n_points_integration_angular
+  !end if
 
 END_PROVIDER
 

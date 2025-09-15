@@ -37,6 +37,11 @@
     n_points_extra_integration_angular = my_n_pt_a_extra_grid
   endif
 
+  write(6,*) 'Extra grid parameters:'
+  call write_int(6, n_points_extra_radial_grid, 'N radial points ')
+  call write_int(6, n_points_extra_integration_angular, 'N angular points') 
+  write(6,*) ''      
+
 END_PROVIDER
 
 ! ---

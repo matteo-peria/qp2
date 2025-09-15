@@ -7,6 +7,7 @@ subroutine give_all_mos_at_r(r,mos_array)
  double precision, intent(in) :: r(3)
  double precision, intent(out) :: mos_array(mo_num)
  double precision :: aos_array(ao_num)
+ mos_array(:) = 0.d0
  call give_all_aos_at_r(r,aos_array)
  call dgemv('N',mo_num,ao_num,1.d0,mo_coef_transp,mo_num,aos_array,1,0.d0,mos_array,1)
 end
