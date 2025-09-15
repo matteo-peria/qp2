@@ -181,6 +181,7 @@ BEGIN_PROVIDER [double precision, ao_two_e_tc_tot, (ao_num, ao_num, ao_num, ao_n
       if(tc_save_mem_loops) then
 
         print*, ' LOOPS are used to evaluate non-Hermitian part of ao_two_e_tc_tot ...'
+        print*, ' TODO : this can be improved by doing 3 separated step'
 
         !$OMP PARALLEL                                                 &
         !$OMP DEFAULT (NONE)                                           &
@@ -260,7 +261,6 @@ BEGIN_PROVIDER [double precision, ao_two_e_tc_tot, (ao_num, ao_num, ao_num, ao_n
 
     ! ---
   
-    logical          :: integ_zero
     double precision :: integ_val
 
     print*, ' adding ERI to ao_two_e_tc_tot ...'
@@ -268,15 +268,14 @@ BEGIN_PROVIDER [double precision, ao_two_e_tc_tot, (ao_num, ao_num, ao_num, ao_n
     if(tc_save_mem) then
       print*, ' ao_integrals_map will not be used'
       !$OMP PARALLEL DEFAULT(NONE)                     &
-      !$OMP PRIVATE(i, j, k, l, integ_zero, integ_val) & 
+      !$OMP PRIVATE(i, j, k, l, integ_val) & 
       !$OMP SHARED(ao_num, ao_two_e_tc_tot)
       !$OMP DO COLLAPSE(3)
       do j = 1, ao_num
         do l = 1, ao_num
           do i = 1, ao_num
             do k = 1, ao_num
-              integ_zero = ao_two_e_integral_zero(i,j,k,l)
-              if(.not. integ_zero) then
+              if(.not. ao_two_e_integral_zero(i,j,k,l)) then
                             ! i,k : r1    j,l : r2
                 integ_val = ao_two_e_integral(i,k,j,l)
                 ao_two_e_tc_tot(k,i,l,j) = ao_two_e_tc_tot(k,i,l,j) + integ_val
