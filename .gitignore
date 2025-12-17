@@ -22,13 +22,24 @@ etc/00.qp_root.rc
 # Except changes to default local plugins and README file
 !/plugins/local/
 !/plugins/README.rst
-# Ignore everything inside each plugin directory 
-#(links to other directories, executables, automatic Makefiles)
-/plugins/*/*
-# Except changes to code
-!/plugins/*/*.irp.f
-!/plugins/*/*.f90
-!/plugins/*/*.F90
-!/plugins/*/NEED
+!/plugins/.gitignore
+## Ignore everything inside each plugin directory 
+##(links to other directories, executables, automatic Makefiles)
+#/plugins/*/*
+## Except changes to code
+#!/plugins/*/*.irp.f
+#!/plugins/*/*.f90
+#!/plugins/*/*.F90
+#!/plugins/*/NEED
+#
+# ignore everything in plugin/local directories
+/plugins/local/*/*
+# except files irp.f files, but ignore the automatic ezfio_interface
+#!/plugins/local/*/*.*
+!/plugins/local/*/*.irp.f
 
-
+/plugins/local/*/ezfio_interface.irp.f
+# do not ignore local plugins files
+!/plugins/local/*/*.f90
+!/plugins/local/*/*.F90
+!/plugins/local/*/NEED
