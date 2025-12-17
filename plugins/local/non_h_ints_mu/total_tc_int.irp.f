@@ -320,6 +320,20 @@ BEGIN_PROVIDER [double precision, ao_two_e_tc_tot, (ao_num, ao_num, ao_num, ao_n
 
   endif ! read_tc_integ
 
+
+  ! Check if we are running frozen-core TC computation with ab-initio PP
+  if (core_tc_op.and.pp_abinitio) then
+    do j = 1, ao_num
+      do l = 1, ao_num
+        do i = 1, ao_num
+          do k = 1, ao_num
+            ao_two_e_tc_tot(k,i,l,j) -= int3b_core_tcxc_ao_bch_terms_grid12a(i,k,l,j)
+          enddo
+        enddo
+      enddo
+    enddo
+  end if
+
   if(write_tc_integ .and. mpi_master) then
     print*, ' Saving ao_two_e_tc_tot in ', trim(ezfio_filename) // '/work/ao_two_e_tc_tot'
     open(unit=11, form="unformatted", file=trim(ezfio_filename)//'/work/ao_two_e_tc_tot', action="write")
