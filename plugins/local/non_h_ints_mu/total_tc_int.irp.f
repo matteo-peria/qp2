@@ -323,6 +323,7 @@ BEGIN_PROVIDER [double precision, ao_two_e_tc_tot, (ao_num, ao_num, ao_num, ao_n
 
   ! Check if we are running frozen-core TC computation with ab-initio PP
   if (core_tc_op.and.pp_abinitio) then
+    write(*,*) "Adding PP-ab inition contrib"
     do j = 1, ao_num
       do l = 1, ao_num
         do i = 1, ao_num
