@@ -80,10 +80,6 @@ module gpu
 ! ------------
 
   interface
-    logical(c_bool) function no_gpu() bind(C)
-      import
-    end function
-
     integer function gpu_ndevices() bind(C)
       import
     end function
@@ -91,6 +87,11 @@ module gpu
     subroutine gpu_set_device(id) bind(C)
       import
       integer(c_int32_t), value :: id
+    end subroutine
+
+    subroutine gpu_get_memory(free, total) bind(C, name='gpu_get_memory')
+      import
+      integer(c_size_t) :: free, total
     end subroutine
 
     subroutine gpu_allocate_c(ptr, n) bind(C, name='gpu_allocate')
@@ -138,6 +139,11 @@ module gpu
     subroutine gpu_set_stream_c(handle, stream) bind(C, name='gpu_set_stream')
       import
       type(c_ptr), value :: handle, stream
+    end subroutine
+
+    subroutine gpu_stream_synchronize(stream) bind(C)
+      import
+      type(c_ptr), value :: stream
     end subroutine
 
     subroutine gpu_synchronize() bind(C)
@@ -280,12 +286,14 @@ module gpu
   end interface gpu_deallocate
 
   interface gpu_upload
-    procedure gpu_upload_double1  &
+    procedure gpu_upload_double0  &
+             ,gpu_upload_double1  &
              ,gpu_upload_double2  &
              ,gpu_upload_double3  &
              ,gpu_upload_double4  &
              ,gpu_upload_double5  &
              ,gpu_upload_double6  &
+             ,gpu_upload_real0  &
              ,gpu_upload_real1  &
              ,gpu_upload_real2  &
              ,gpu_upload_real3  &
@@ -295,12 +303,14 @@ module gpu
   end interface gpu_upload
 
   interface gpu_download
-    procedure gpu_download_double1  &
+    procedure gpu_download_double0  &
+             ,gpu_download_double1  &
              ,gpu_download_double2  &
              ,gpu_download_double3  &
              ,gpu_download_double4  &
              ,gpu_download_double5  &
              ,gpu_download_double6  &
+             ,gpu_download_real0  &
              ,gpu_download_real1  &
              ,gpu_download_real2  &
              ,gpu_download_real3  &
@@ -310,12 +320,14 @@ module gpu
   end interface gpu_download
 
   interface gpu_copy
-    procedure gpu_copy_double1  &
+    procedure gpu_copy_double0  &
+             ,gpu_copy_double1  &
              ,gpu_copy_double2  &
              ,gpu_copy_double3  &
              ,gpu_copy_double4  &
              ,gpu_copy_double5  &
              ,gpu_copy_double6  &
+             ,gpu_copy_real0  &
              ,gpu_copy_real1  &
              ,gpu_copy_real2  &
              ,gpu_copy_real3  &
@@ -719,6 +731,14 @@ module gpu
 ! gpu_upload
 ! ----------
 
+    subroutine gpu_upload_double0(cpu_ptr, gpu_ptr, n)
+      implicit none
+      double precision, target, intent(in)     :: cpu_ptr
+      double precision, target, intent(in)     :: gpu_ptr
+      integer, intent(in) :: n
+      call gpu_upload_c(c_loc(cpu_ptr), c_loc(gpu_ptr), 8_8*n)
+    end subroutine
+
     subroutine gpu_upload_double1(cpu_ptr, gpu_ptr)
       implicit none
       double precision, target, intent(in)     :: cpu_ptr(*)
@@ -761,6 +781,14 @@ module gpu
       call gpu_upload_c(c_loc(cpu_ptr), gpu_ptr%c, product(shape(gpu_ptr%f)*1_8)*8_8)
     end subroutine
 
+
+    subroutine gpu_upload_real0(cpu_ptr, gpu_ptr, n)
+      implicit none
+      real, target, intent(in)     :: cpu_ptr
+      real, target, intent(in)     :: gpu_ptr
+      integer, intent(in) :: n
+      call gpu_upload_c(c_loc(cpu_ptr), c_loc(gpu_ptr), 4_8*n)
+    end subroutine
 
     subroutine gpu_upload_real1(cpu_ptr, gpu_ptr)
       implicit none
@@ -808,6 +836,14 @@ module gpu
 ! gpu_download
 ! ------------
 
+    subroutine gpu_download_double0(gpu_ptr, cpu_ptr, n)
+      implicit none
+      double precision, target, intent(in)     :: gpu_ptr
+      double precision, target, intent(in)     :: cpu_ptr
+      integer, intent(in) :: n
+      call gpu_download_c(c_loc(gpu_ptr), c_loc(cpu_ptr), 8_8*n)
+    end subroutine
+
     subroutine gpu_download_double1(gpu_ptr, cpu_ptr)
       implicit none
       type(gpu_double1), intent(in)  :: gpu_ptr
@@ -848,6 +884,14 @@ module gpu
       type(gpu_double6), intent(in)  :: gpu_ptr
       double precision, target, intent(in)   :: cpu_ptr(:,:,:,:,:,:)
       call gpu_download_c(gpu_ptr%c, c_loc(cpu_ptr), 8_8*product(shape(gpu_ptr%f)*1_8))
+    end subroutine
+
+    subroutine gpu_download_real0(gpu_ptr, cpu_ptr, n)
+      implicit none
+      real, target, intent(in)     :: gpu_ptr
+      real, target, intent(in)     :: cpu_ptr
+      integer, intent(in) :: n
+      call gpu_download_c(c_loc(gpu_ptr), c_loc(cpu_ptr), 4_8*n)
     end subroutine
 
     subroutine gpu_download_real1(gpu_ptr, cpu_ptr)
@@ -895,6 +939,14 @@ module gpu
 ! gpu_copy
 ! --------
 
+    subroutine gpu_copy_double0(gpu_ptr_src, gpu_ptr_dest, n)
+      implicit none
+      double precision, target, intent(in)        :: gpu_ptr_src
+      double precision, target, intent(in)        :: gpu_ptr_dest
+      integer, intent(in) :: n
+      call gpu_copy_c(c_loc(gpu_ptr_src), c_loc(gpu_ptr_dest), 8_8*n)
+    end subroutine
+
     subroutine gpu_copy_double1(gpu_ptr_src, gpu_ptr_dest)
       implicit none
       type(gpu_double1), intent(in)        :: gpu_ptr_src
@@ -937,6 +989,13 @@ module gpu
       call gpu_copy_c(gpu_ptr_src%c, gpu_ptr_dest%c, 8_8*product(shape(gpu_ptr_dest%f)*1_8))
     end subroutine
 
+    subroutine gpu_copy_real0(gpu_ptr_src, gpu_ptr_dest, n)
+      implicit none
+      real, target, intent(in)        :: gpu_ptr_src
+      real, target, intent(in)        :: gpu_ptr_dest
+      integer, intent(in) :: n
+      call gpu_copy_c(c_loc(gpu_ptr_src), c_loc(gpu_ptr_dest), 4_8*n)
+    end subroutine
 
     subroutine gpu_copy_real1(gpu_ptr_src, gpu_ptr_dest)
       implicit none
@@ -1022,7 +1081,6 @@ module gpu
 ! ---
 
 subroutine gpu_ddot(handle, n, dx, incx, dy, incy, res)
-!  use gpu
   type(gpu_blas), intent(in)     :: handle
   integer*4                      :: n, incx, incy
   double precision, target       :: dx, dy
@@ -1032,7 +1090,6 @@ end subroutine
 
 
 subroutine gpu_ddot_64(handle, n, dx, incx, dy, incy, res)
-!  use gpu
   type(gpu_blas), intent(in)     :: handle
   integer*8                      :: n, incx, incy
   double precision, target       :: dx, dy
@@ -1042,7 +1099,6 @@ end subroutine
 
 
 subroutine gpu_sdot(handle, n, dx, incx, dy, incy, res)
-!  use gpu
   type(gpu_blas), intent(in)     :: handle
   integer*4                      :: n, incx, incy
   real, target       :: dx, dy
@@ -1052,7 +1108,6 @@ end subroutine
 
 
 subroutine gpu_sdot_64(handle, n, dx, incx, dy, incy, res)
-!  use gpu
   type(gpu_blas), intent(in)     :: handle
   integer*8                      :: n, incx, incy
   real, target       :: dx, dy
@@ -1066,7 +1121,6 @@ end subroutine
 
 subroutine gpu_dgeam(handle, transa, transb, m, n, alpha, a, lda, beta, &
   b, ldb, c, ldc)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa, transb
   integer*4, intent(in)        :: m, n, lda, ldb, ldc
@@ -1079,7 +1133,6 @@ end subroutine
 
 subroutine gpu_dgeam_64(handle, transa, transb, m, n, alpha, a, lda, beta, &
   b, ldb, c, ldc)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa, transb
   integer*8, intent(in)        :: m, n, lda, ldb, ldc
@@ -1092,7 +1145,6 @@ end subroutine
 
 subroutine gpu_sgeam(handle, transa, transb, m, n, alpha, a, lda, beta, &
   b, ldb, c, ldc)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa, transb
   integer*4, intent(in)        :: m, n, lda, ldb, ldc
@@ -1105,7 +1157,6 @@ end subroutine
 
 subroutine gpu_sgeam_64(handle, transa, transb, m, n, alpha, a, lda, beta, &
   b, ldb, c, ldc)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa, transb
   integer*8, intent(in)        :: m, n, lda, ldb, ldc
@@ -1121,7 +1172,6 @@ end subroutine
 
 subroutine gpu_dgemv(handle, transa, m, n, alpha, a, lda, &
   x, incx, beta, y, incy)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa
   integer*4, intent(in)        :: m, n, lda, incx, incy
@@ -1134,7 +1184,6 @@ end subroutine
 
 subroutine gpu_dgemv_64(handle, transa, m, n, alpha, a, lda, &
   x, incx, beta, y, incy)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa
   integer*8, intent(in)        :: m, n, lda, incx, incy
@@ -1148,7 +1197,6 @@ end subroutine
 
 subroutine gpu_sgemv(handle, transa, m, n, alpha, a, lda, &
   x, incx, beta, y, incy)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa
   integer*4, intent(in)        :: m, n, lda, incx, incy
@@ -1161,7 +1209,6 @@ end subroutine
 
 subroutine gpu_sgemv_64(handle, transa, m, n, alpha, a, lda, &
   x, incx, beta, y, incy)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa
   integer*8, intent(in)        :: m, n, lda, incx, incy
@@ -1178,7 +1225,6 @@ end subroutine
 
 subroutine gpu_dgemm(handle, transa, transb, m, n, k, alpha, a, lda, &
   b, ldb, beta, c, ldc)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa, transb
   integer*4, intent(in)        :: m, n, k, lda, ldb, ldc
@@ -1191,7 +1237,6 @@ end subroutine
 
 subroutine gpu_dgemm_64(handle, transa, transb, m, n, k, alpha, a, lda, &
   b, ldb, beta, c, ldc)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa, transb
   integer*8, intent(in)        :: m, n, k, lda, ldb, ldc
@@ -1203,7 +1248,6 @@ end subroutine
 
 subroutine gpu_sgemm(handle, transa, transb, m, n, k, alpha, a, lda, &
   b, ldb, beta, c, ldc)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa, transb
   integer*4, intent(in)        :: m, n, k, lda, ldb, ldc
@@ -1216,7 +1260,6 @@ end subroutine
 
 subroutine gpu_sgemm_64(handle, transa, transb, m, n, k, alpha, a, lda, &
   b, ldb, beta, c, ldc)
-!  use gpu
   type(gpu_blas), intent(in)   :: handle
   character, intent(in)        :: transa, transb
   integer*8, intent(in)        :: m, n, k, lda, ldb, ldc
