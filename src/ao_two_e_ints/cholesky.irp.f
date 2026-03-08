@@ -58,6 +58,7 @@ END_PROVIDER
    integer                        :: i,j,k,m,p,q, dj, p2, q2, ii, jj
    integer*8                      :: i8, j8, p8, qj8, rank_max, np8
    integer                        :: N, np, nq
+   logical                        :: rank_max_reached
 
    double precision               :: Dmax, Dmin, Qmax, f
    double precision, external     :: get_ao_two_e_integral
@@ -178,7 +179,7 @@ END_PROVIDER
      rank_max = np
      ! Avoid too large arrays when there are many electrons
      if (elec_num > 10) then
-       rank_max = min(np,20*elec_num*elec_num)
+       rank_max = min(np,25*elec_num*elec_num)
      endif
 
      call mmap_create_d('', (/ ndim8, rank_max /), .False., .True., map)
@@ -189,18 +190,16 @@ END_PROVIDER
 
      ! 4.
      i = 0
+     rank_max_reached = .False.
 
      mem = memory_of_double(np)                & ! Delta(np,nq)
          + (np+1)*memory_of_double(block_size)   ! Ltmp_p(np,block_size) + Ltmp_q(nq,block_size)
 
 !     call check_mem(mem)
-
      ! 5.
-     do while ( (Dmax > tau).and.(np > 0) )
+     do while ( (Dmax > tau).and.(np > 0).and.(.not.rank_max_reached) )
        ! a.
        i = i+1
-
-
 
        block_size = max(N,24)
 
@@ -308,6 +307,8 @@ END_PROVIDER
          Qmax = max(Qmax, D(Dset(q)))
        enddo
 
+       if (Qmax < Dmin) exit
+
        ! g.
 
        iblock = 0
@@ -318,8 +319,9 @@ END_PROVIDER
 
          ! i.
          rank = N+j
-         if (rank == rank_max) then
+         if (rank >= rank_max) then
            print *, 'cholesky: rank_max reached'
+           rank_max_reached = .True.
            exit
          endif
 
@@ -466,10 +468,11 @@ END_PROVIDER
      endif
 
 
+     ! Reverse order of Cholesky vectors to increase precision in dot products
      !$OMP PARALLEL DO PRIVATE(k,j)
      do k=1,rank
        do j=1,ao_num
-           cholesky_ao(1:ao_num,j,k) = L((j-1_8)*ao_num+1_8:1_8*j*ao_num,k)
+           cholesky_ao(1:ao_num,j,k) = L((j-1_8)*ao_num+1_8:1_8*j*ao_num,rank-k+1)
        enddo
      enddo
      !$OMP END PARALLEL DO
