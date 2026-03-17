@@ -1,4 +1,5 @@
 use gpu
+use gpu_affinity
 
 BEGIN_PROVIDER [ type(gpu_blas), blas_handle ]
  implicit none
@@ -47,19 +48,33 @@ end
 
  BEGIN_PROVIDER [ type(gpu_blas), blas_handle_mt, (0:nthreads_pt2+1) ]
 &BEGIN_PROVIDER [ integer, igpu_mt, (0:nthreads_pt2+1) ]
+ use omp_lib
  implicit none
  BEGIN_DOC
  ! Handle for cuBLAS or RocBLAS
  END_DOC
  integer :: i
  if (gpu_num > 0) then
-   do i=0,nthreads_pt2+1
-     igpu_mt(i) = mod(i, gpu_num)
-     call gpu_set_device(igpu_mt(i))
-     call gpu_blas_create(blas_handle_mt(i))
-   enddo
-   call gpu_set_device(0)
+
+integer :: tid, igpu
+
+! ── Build the cpu->gpu map once, in serial ────────────────────────────
+call build_gpu_affinity_map()
+
+!$omp parallel private(tid, igpu) num_threads(nthreads_pt2+2)
+  tid  = omp_get_thread_num()         ! 0-based thread index
+  igpu = get_closest_gpu()            ! closest GPU for THIS thread
+
+  igpu_mt(tid) = igpu
+  call gpu_set_device(igpu)
+  call gpu_blas_create(blas_handle_mt(tid))
+!$omp end parallel
  endif
+ call gpu_set_device(0)
+ print *, 'CPU Thread/GPU mapping:'
+ do i=0,nthreads_pt2+1
+   print *, i, igpu_mt(i)
+ enddo
 END_PROVIDER
 
 BEGIN_PROVIDER [ type(gpu_stream), gpu_default_stream ]
