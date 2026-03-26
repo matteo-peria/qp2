@@ -46,17 +46,26 @@ subroutine gpu_unset_busy(igpu)
 end
 
 
- BEGIN_PROVIDER [ type(gpu_blas), blas_handle_mt, (0:nthreads_pt2+1) ]
+ BEGIN_PROVIDER [ integer, gpu_num ]
+&BEGIN_PROVIDER [ type(gpu_blas), blas_handle_mt, (0:nthreads_pt2+1) ]
 &BEGIN_PROVIDER [ integer, igpu_mt, (0:nthreads_pt2+1) ]
  use omp_lib
  implicit none
  BEGIN_DOC
+ ! Number of usable GPUs
  ! Handle for cuBLAS or RocBLAS
  END_DOC
  integer :: i
+ integer :: tid, igpu
+
+ gpu_num = gpu_ndevices()
  if (gpu_num > 0) then
 
-integer :: tid, igpu
+
+  tid  = omp_get_thread_num()
+  if (tid > 0) then
+    call qp_bug(irp_here, tid, "blas_handle_mt provided in OpenMP section")
+  endif
 
 ! ── Build the cpu->gpu map once, in serial ────────────────────────────
 call build_gpu_affinity_map()
@@ -72,9 +81,7 @@ call build_gpu_affinity_map()
  endif
  call gpu_set_device(0)
  print *, 'CPU Thread/GPU mapping:'
- do i=0,nthreads_pt2+1
-   print *, i, igpu_mt(i)
- enddo
+ print *, igpu_mt(:)
 END_PROVIDER
 
 BEGIN_PROVIDER [ type(gpu_stream), gpu_default_stream ]
@@ -83,14 +90,6 @@ BEGIN_PROVIDER [ type(gpu_stream), gpu_default_stream ]
  ! Default stream
  END_DOC
  gpu_default_stream%c = C_NULL_PTR
-END_PROVIDER
-
-BEGIN_PROVIDER [ integer, gpu_num ]
- implicit none
- BEGIN_DOC
- ! Number of usable GPUs
- END_DOC
- gpu_num = gpu_ndevices()
 END_PROVIDER
 
 BEGIN_PROVIDER [ integer, gpu_mem ]

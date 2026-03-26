@@ -139,6 +139,7 @@ subroutine run(f)
 !    A=0.d0
 !    call ezfio_set_ao_one_e_ints_ao_integrals_kinetic(A)
 !    call ezfio_set_ao_one_e_ints_io_ao_integrals_kinetic('Read')
+    call ezfio_set_ao_one_e_ints_ao_one_e_integrals(A)
     call ezfio_set_ao_one_e_ints_io_ao_one_e_integrals('Read')
   endif
 
