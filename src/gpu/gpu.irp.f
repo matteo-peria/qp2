@@ -1,5 +1,5 @@
 use gpu
-use gpu_affinity
+use gpu_affinity_mod
 
 BEGIN_PROVIDER [ type(gpu_blas), blas_handle ]
  implicit none

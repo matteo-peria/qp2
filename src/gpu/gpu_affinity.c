@@ -52,7 +52,10 @@ static int cpu_numa_node(int cpu)
                  "/sys/devices/system/node/node%d/cpulist", n);
         FILE *f = fopen(path, "r");
         if (!f) break;
-        fgets(buf, sizeof(buf), f);
+        if (fgets(buf, sizeof(buf), f) == NULL) {
+          fclose(f);
+          break;
+        }
         fclose(f);
 
         /* cpulist is a range string: "0-23,48-71"  */
@@ -108,7 +111,10 @@ void build_gpu_affinity_map_(void)
 
         /* Filter by vendor ─────────────────────────────────────────── */
         unsigned long vendor;
-        snprintf(path, sizeof(path), "%s/vendor", base);
+        path[0] = '\0';
+        strncat(path, base, sizeof(path) - 1);
+        strncat(path, "/vendor", sizeof(path) - strlen(path) - 1);
+
         if (read_hex(path, &vendor) < 0) continue;
         if (vendor != VENDOR_NVIDIA &&
             vendor != VENDOR_AMD    &&
@@ -116,7 +122,9 @@ void build_gpu_affinity_map_(void)
 
         /* Filter by PCI class (drop the programming-interface byte) ─ */
         unsigned long pci_class;
-        snprintf(path, sizeof(path), "%s/class", base);
+        path[0] = '\0';
+        strncat(path, base, sizeof(path) - 1);
+        strncat(path, "/class", sizeof(path) - strlen(path) - 1);
         if (read_hex(path, &pci_class) < 0) continue;
         unsigned int cls = (unsigned int)(pci_class >> 8);
         if (cls != CLASS_VGA && cls != CLASS_3D && cls != CLASS_DISPLAY)
@@ -124,9 +132,14 @@ void build_gpu_affinity_map_(void)
 
         /* NUMA node (/sys value is -1 when not a NUMA system) ──────── */
         long numa = -1;
-        snprintf(path, sizeof(path), "%s/numa_node", base);
+        path[0] = '\0';
+        strncat(path, base, sizeof(path) - 1);
+        strncat(path, "/numa_node", sizeof(path) - strlen(path) - 1);
         FILE *f = fopen(path, "r");
-        if (f) { fscanf(f, "%ld", &numa); fclose(f); }
+        if (f) {
+          if (fscanf(f, "%ld", &numa) == EOF) numa = 0;
+          fclose(f);
+        }
 
         /* BDF from directory name:  dddd:bb:ss.f ───────────────────── */
         unsigned int dom, bus, slot, func;
