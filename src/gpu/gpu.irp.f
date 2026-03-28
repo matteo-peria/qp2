@@ -81,7 +81,7 @@ call build_gpu_affinity_map()
  endif
  call gpu_set_device(0)
  print *, 'CPU Thread/GPU mapping:'
- print *, igpu_mt(:)
+ print *, int(igpu_mt(:),2)
 END_PROVIDER
 
 BEGIN_PROVIDER [ type(gpu_stream), gpu_default_stream ]

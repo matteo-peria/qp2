@@ -273,6 +273,7 @@ def write_ezfio(trexio_filename, filename):
     except:
         basis_type = "None"
         print("None")
+        ezfio.set_basis_typ(basis_type)
         ezfio.set_ao_basis_ao_cartesian(True)
 
     print("AOS\t\t...\t", end=' ')
