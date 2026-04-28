@@ -231,6 +231,7 @@ subroutine H_S2_u_0_nstates_openmp_work_$N_int(v_t,s_t,u_t,N_st,sze,istart,iend,
   if (.not.compute_singles) then
     provide singles_alpha_csc
     provide singles_beta_csc
+    provide singles_beta_csc_idx
   endif
 
 

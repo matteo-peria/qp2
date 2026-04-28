@@ -146,8 +146,8 @@ end function basis_prod_overlap_func
   double precision :: local_cutoff
   integer          :: i, j, k, mm
 
-!  local_cutoff = 1.d-4
   local_cutoff = 1.d-10
+!  local_cutoff = -1.d-15
   mm=basis_prod_num
   do i=1,basis_prod_num
     if ( D(i) < local_cutoff) then

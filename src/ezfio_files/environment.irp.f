@@ -40,7 +40,7 @@ BEGIN_PROVIDER [ integer, nproc ]
   nproc = 1
   !$OMP PARALLEL
   !$OMP MASTER
-  !$ nproc = omp_get_num_threads()
+  nproc = omp_get_num_threads()
   !$OMP END MASTER
   !$OMP END PARALLEL
 END_PROVIDER

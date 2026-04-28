@@ -178,6 +178,10 @@ subroutine orb_range_2_rdm_openmp_work_$N_int(big_array,dim1,norb,list_orb,ispin
             !$OMP          singles_a, n_singles_a, singles_b,        &
             !$OMP          n_singles_b, nkeys, keys, values, big_array_local)
 
+   if (omp_get_level() > 1) then
+     print *, irp_here, ': Nested openMP section (', omp_get_level(),')'
+   endif
+
    ! Alpha/Beta double excitations
    ! =============================
    nkeys = 0
