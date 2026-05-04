@@ -257,7 +257,7 @@ subroutine export_trexio(update,full_path)
   endif
 
 
-  if (export_basis) then
+  if (export_basis.or. trim(basis_type) /= 'None') then
 
 ! Basis
 ! -----
@@ -529,6 +529,7 @@ subroutine export_trexio(update,full_path)
       call trexio_assert(rc, TREXIO_SUCCESS)
     enddo
 
+    rc = trexio_write_ao_num(f(1), ao_num)
     if (export_cartesian) then
       rc = trexio_write_mo_coefficient(f(1), mo_coef)
       call trexio_assert(rc, TREXIO_SUCCESS)
@@ -553,15 +554,17 @@ subroutine export_trexio(update,full_path)
   if (export_mo_one_e_ints) then
     print *, 'MO one-e integrals'
 
-    rc = trexio_write_mo_1e_int_kinetic(f(1),mo_kinetic_integrals)
-    call trexio_assert(rc, TREXIO_SUCCESS)
-
-    rc = trexio_write_mo_1e_int_potential_n_e(f(1),mo_integrals_n_e)
-    call trexio_assert(rc, TREXIO_SUCCESS)
-
-    if (do_pseudo) then
-      rc = trexio_write_mo_1e_int_ecp(f(1),mo_pseudo_integrals_local)
+    if (trim(basis_type) /= 'None') then
+      rc = trexio_write_mo_1e_int_kinetic(f(1),mo_kinetic_integrals)
       call trexio_assert(rc, TREXIO_SUCCESS)
+
+      rc = trexio_write_mo_1e_int_potential_n_e(f(1),mo_integrals_n_e)
+      call trexio_assert(rc, TREXIO_SUCCESS)
+
+      if (do_pseudo) then
+        rc = trexio_write_mo_1e_int_ecp(f(1),mo_pseudo_integrals_local)
+        call trexio_assert(rc, TREXIO_SUCCESS)
+      endif
     endif
 
     rc = trexio_write_mo_1e_int_core_hamiltonian(f(1),mo_one_e_integrals)
