@@ -127,7 +127,11 @@ end
 &BEGIN_PROVIDER [ double precision, sr_correction_rho3_of_r, (N_states) ]
  implicit none
  BEGIN_DOC
-! 1/2 \int 1/2 \rho(R)^2 g(r=0,\rho) a_3 (4 \epsilon(R))^{3/2) dR
+! $\frac{1}{2} \int P_2(R) \cdot a_3 \cdot (4\epsilon(R))^{3/2} \frac{1}{1 + \frac{4}{\sqrt{\pi}}\sqrt{\epsilon(R)}} \, dR$
+!
+! $\frac{1}{2} \int P_2(R) \cdot \left(1 + \frac{2}{\sqrt{\pi}\mu}\right)^{-1}\cdot a_3 \mu^{-3}  \, dR$
+!
+! $a_3 = -\frac43 \sqrt{\pi} (\sqrt{2}-1)$
  END_DOC
  double precision :: weight, corr, mu, epsilon, on_top, rs
  double precision  :: corr1, corr2, corr3, corr4, corr5, corr6

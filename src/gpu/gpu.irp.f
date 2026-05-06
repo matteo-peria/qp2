@@ -59,6 +59,7 @@ end
  integer :: tid, igpu
 
  gpu_num = gpu_ndevices()
+ igpu_mt = 0
  if (gpu_num > 0) then
 
 
@@ -67,8 +68,8 @@ end
     call qp_bug(irp_here, tid, "blas_handle_mt provided in OpenMP section")
   endif
 
-! ── Build the cpu->gpu map once, in serial ────────────────────────────
-call build_gpu_affinity_map()
+  ! ── Build the cpu->gpu map once, in serial ────────────────────────────
+  call build_gpu_affinity_map()
 
 !$omp parallel private(tid, igpu) num_threads(nthreads_pt2+2)
   tid  = omp_get_thread_num()         ! 0-based thread index
@@ -78,10 +79,10 @@ call build_gpu_affinity_map()
   call gpu_set_device(igpu)
   call gpu_blas_create(blas_handle_mt(tid))
 !$omp end parallel
+   print *, 'CPU Thread/GPU mapping:'
+   print *, int(igpu_mt(:),2)
+   call gpu_set_device(0)
  endif
- call gpu_set_device(0)
- print *, 'CPU Thread/GPU mapping:'
- print *, int(igpu_mt(:),2)
 END_PROVIDER
 
 BEGIN_PROVIDER [ type(gpu_stream), gpu_default_stream ]
