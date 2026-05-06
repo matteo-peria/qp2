@@ -152,7 +152,8 @@ end
   do ipoint = 1, n_points_final_grid
    weight = final_weight_at_r_vector(ipoint)
 
-   mu = mu_of_r_projector_ao_prod(ipoint)
+!   mu = mu_of_r_projector_ao_prod(ipoint)
+   mu = mu_of_r_prov(ipoint,1)
    epsilon = 1.d0 / (4.d0 * mu*mu)
 
    f2_term = a3 * (4.d0*epsilon)**(1.5d0) / (1.d0 + four_over_sq_pi*dsqrt(epsilon))

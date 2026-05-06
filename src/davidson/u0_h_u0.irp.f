@@ -182,8 +182,9 @@ subroutine H_u_0_nstates_openmp_work_$N_int(v_t,u_t,N_st,sze,istart,iend,ishift,
    compute_singles=.True.
 
    if (.not.compute_singles) then
-     provide singles_alpha_csc
-     provide singles_beta_csc
+    provide singles_alpha_csc
+    provide singles_beta_csc
+    provide singles_beta_csc_idx
    endif
 
 

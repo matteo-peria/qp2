@@ -496,6 +496,7 @@ subroutine add_integrals_to_map_cholesky
   double precision, allocatable :: Vtmp(:,:,:)
   integer(key_kind)  , allocatable :: buffer_i(:)
   real(integral_kind), allocatable :: buffer_value(:)
+  PROVIDE blas_handle_mt
 
   if (.not.mo_cholesky_double) then
     call add_integrals_to_map_cholesky_sp
@@ -590,7 +591,7 @@ subroutine add_integrals_to_map_cholesky_sp
   real(integral_kind), allocatable :: buffer_value(:)
 
 
-  PROVIDE cholesky_mo_transp_sp_d
+  PROVIDE cholesky_mo_transp_sp cholesky_mo_transp_sp_d blas_handle_mt
 
   !$OMP PARALLEL DEFAULT(SHARED) &
   !$OMP PRIVATE(i,j,k,l,n_integrals,buffer_value, buffer_i, Vtmp_d, Vtmp, iproc)

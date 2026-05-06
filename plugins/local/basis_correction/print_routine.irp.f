@@ -76,7 +76,8 @@ subroutine print_basis_correction
 !      write(*, '(A29,X,I3,X,A3,X,F16.10)') '  ECMD SU-LDA-OT     , state ',istate,' = ',ecmd_lda_on_top_su_mu_of_r(istate)
       write(*, '(A29,X,I3,X,A3,X,F16.10)') '  ECMD SU-PBE-OT     , state ',istate,' = ',ecmd_pbe_on_top_su_mu_of_r(istate)
      enddo
-     if (mu_of_r_potential == "proj_cas") then
+     if ( (mu_of_r_potential == "proj_cas").or. &
+          (mu_of_r_potential == "cas_full") ) then
        print*,''
        print*,'Work in progress'
        do istate = 1, N_states
