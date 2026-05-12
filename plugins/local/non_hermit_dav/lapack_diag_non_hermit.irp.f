@@ -1773,7 +1773,7 @@ subroutine check_biorthog(n, m, Vl, Vr, accu_d, accu_nd, S, thr_d, thr_nd, stop_
     print *, ' accu_nd = ', accu_nd
     print *, ' accu_d  = ', dabs(accu_d-dble(m))/dble(m)
   else
-    print *, ' vectors are bi-orthogonals'
+    print *, ' vectors are bi-orthogonal'
   endif
 
   ! ---
@@ -1782,10 +1782,10 @@ subroutine check_biorthog(n, m, Vl, Vr, accu_d, accu_nd, S, thr_d, thr_nd, stop_
     print *, ' non bi-orthogonal vectors !'
     print *, ' accu_nd = ', accu_nd
     print *, ' accu_d  = ', dabs(accu_d-dble(m))/dble(m)
-    !print *, ' overlap matrix:'
-    !do i = 1, m
-    !  write(*,'(1000(F16.10,X))') S(i,:)
-    !enddo
+    print *, ' overlap matrix:'
+    do i = 1, m
+      write(*,'(1000(F16.10,X))') S(i,:)
+    enddo
     stop
   endif
 

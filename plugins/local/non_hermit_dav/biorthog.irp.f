@@ -56,26 +56,7 @@ subroutine non_hrmt_bieig_degen(n, A, thr_d, thr_nd, leigvec, reigvec, n_real_ei
 
   allocate(WR(n), WI(n), VL(n,n), VR(n,n), is_real(n),iorder(n) ) 
 
- print*,'n = ',n
- print*,'A'
- do i = 1, n
-    write(*,'(100(F16.10,X))')A(i,1:n)
- enddo
   call lapack_diag_non_sym(n, A, WR, WI, VL, VR)
-   print*,''
-   do i = 1, n
-    print*,'----------------'
-    print*,'eigval',WR(i),WI(i)
-    print*,'VR'
-    write(*,'(100(F16.10,X))')VR(1:n,i)
-    print*,'VL'
-    write(*,'(100(F16.10,X))')VL(1:n,i)
-   enddo
-!  print*,'VR 1'
-!  write(*,'(100(F16.10,X))')VR(1:n,1)
-!  print*,'VR 2'
-!  write(*,'(100(F16.10,X))')VR(1:n,2)
-  
 !  
 
   thr_diag = 1d-06
@@ -114,16 +95,15 @@ subroutine non_hrmt_bieig_degen(n, A, thr_d, thr_nd, leigvec, reigvec, n_real_ei
    iorder(i) = list_real(i)
   enddo
   call dsort(eigv_real, iorder, n_real)
-  print*,'In real part'
+ !print*,'In real part'
   do i = 1, n_real
-   print*,'iorder(i)',iorder(i)
    eigv_srtd_real(i) = eigv_real(i)
    do j = 1, n
     reigvec_srtd_real(j,i) = VR(j,iorder(i))
     leigvec_srtd_real(j,i) = VL(j,iorder(i))
    enddo
-   write(*,'(100(F16.10,X))')reigvec_srtd_real(1:n,i)
-   write(*,'(100(F16.10,X))')leigvec_srtd_real(1:n,i)
+  !write(*,'(100(F16.10,X))')reigvec_srtd_real(1:n,i)
+  !write(*,'(100(F16.10,X))')leigvec_srtd_real(1:n,i)
   enddo
 
   if(n_im>0)then
@@ -154,8 +134,8 @@ subroutine non_hrmt_bieig_degen(n, A, thr_d, thr_nd, leigvec, reigvec, n_real_ei
     enddo
     do ii = 1,n_im/2
      print*,'eigenvalue number ',ii,eigval_tmp(ii)
-     right_vec(1:n,1)   = cmplx(VR(1:n,list_im(iorder(ii))) , VR(1:n,list_im(iorder(ii))+1))
-     right_vec(1:n,2)   = cmplx(VR(1:n,list_im(iorder(ii))) ,-1.d0* VR(1:n,list_im(iorder(ii))+1))
+     right_vec(1:n,1)   = cmplx(VR(1:n,(iorder(ii))) , VR(1:n,(iorder(ii))+1))
+     right_vec(1:n,2)   = cmplx(VR(1:n,(iorder(ii))) ,-1.d0* VR(1:n,(iorder(ii))+1))
 !      call get_inverse_complex(right_vec,n,n,inv_right_vec,n)
      call get_pseudo_inverse_complex(right_vec,size(right_vec,1),n,2,inv_right_vec,size(inv_right_vec,1),0.d0)
      ! need to take complex conjug because of convention of L^2 inner in get_pseudo_inverse_complex
@@ -166,48 +146,64 @@ subroutine non_hrmt_bieig_degen(n, A, thr_d, thr_nd, leigvec, reigvec, n_real_ei
       enddo
      enddo
        
-      print*,'right_vec 1 and 2 in column= '
-      do i = 1, n
-       write(*,'(100(F6.3,SP,F6.3,X))')right_vec(i,1:2)
-      enddo
-      print*,'left_vec = '
-      do i = 1, n
-       write(*,'(100(F6.3,SP,F6.3,X))')left_vec(i,1:2)
-      enddo
-      smatrix = cmplx(0.d0,0.d0)
-      do i= 1, 2
-       do j = 1, 2
-        do k = 1, n
-!         smatrix(j,i) += conjg(left_vec(k,j)) * right_vec(k,i)
-         smatrix(j,i) += (left_vec(k,j)) * right_vec(k,i)
-        enddo
+     smatrix = cmplx(0.d0,0.d0)
+     do i= 1, 2
+      do j = 1, 2
+       do k = 1, n
+        smatrix(j,i) += (left_vec(k,j)) * right_vec(k,i)
        enddo
       enddo
-      print*,'smatrix = '
-      do i = 1, 2
-       write(*,'(100(F6.3,SP,F6.3,X))')smatrix(i,1:2)
-      enddo
-      Phi_r(1:n) = real(right_vec(1:n,1),8)
-      Phi_i(1:n) = aimag(right_vec(1:n,1))
-      Xhi_r(1:n) = real(left_vec(1:n,1),8)
-      Xhi_i(1:n) = aimag(left_vec(1:n,1))
-      print*,'Phi_r'
-      write(*,'(100(F16.10,X))')Phi_r(1:n)
-      print*,'Phi_i'
-      write(*,'(100(F16.10,X))')Phi_i(1:n)
-      print*,'Xhi_r'
-      write(*,'(100(F16.10,X))')Xhi_r(1:n)
-      print*,'Xhi_i'
-      write(*,'(100(F16.10,X))')Xhi_i(1:n)
-      sphichi = 0.d0 
-      sphichi(1,1) = ddot(n,Xhi_r,1,Phi_r,1)
-      sphichi(2,1) = ddot(n,Xhi_i,1,Phi_r,1)
-      sphichi(1,2) = ddot(n,Xhi_r,1,Phi_i,1)
-      sphichi(2,2) = ddot(n,Xhi_i,1,Phi_i,1)
-      print*,'Smatrix sphichi'
-      do i = 1, 2
-       write(*,'(100(F16.10,X))')sphichi(i,:)
-      enddo
+     enddo
+     double precision :: accu
+     accu = abs(smatrix(1,2))+abs(smatrix(2,1))
+     if(dabs(accu).gt.1.d-10)then
+      call qp_bug(irp_here,int(dlog(accu)), & 
+             'the 2x2 smatrix of complex-valued eigenvectors is not diagonal')
+     endif
+     accu = real(smatrix(1,1)+smatrix(2,2),8)
+     if(dabs(2.d0-accu).gt.1.d-10)then
+      call qp_bug(irp_here,int(dlog(dabs(2.d0-accu))), & 
+             'the trace of the 2x2 smatrix of complex-valued eigenvectors is not 2')
+     endif
+     accu = aimag(smatrix(1,1)+smatrix(2,2))
+     if(dabs(accu).gt.1.d-10)then
+      call qp_bug(irp_here,int(dlog(dabs(accu))), & 
+             'the trace of the 2x2 smatrix of complex-valued eigenvectors is not 2')
+     endif
+   
+!     print*,'smatrix = '
+!     do i = 1, 2
+!      write(*,'(100(F6.3,SP,F6.3,X))')smatrix(i,1:2)
+!     enddo
+     Phi_r(1:n) = real(right_vec(1:n,1),8)
+     Phi_i(1:n) = aimag(right_vec(1:n,1))
+     Xhi_r(1:n) = real(left_vec(1:n,1),8)
+     Xhi_i(1:n) = aimag(left_vec(1:n,1))
+     sphichi = 0.d0 
+     sphichi(1,1) = ddot(n,Xhi_r,1,Phi_r,1)
+     sphichi(2,1) = ddot(n,Xhi_i,1,Phi_r,1)
+     sphichi(1,2) = ddot(n,Xhi_r,1,Phi_i,1)
+     sphichi(2,2) = ddot(n,Xhi_i,1,Phi_i,1)
+
+     accu = dabs(sphichi(1,2))+dabs(sphichi(2,1))
+     if(dabs(accu).gt.1.d-10)then
+      call qp_bug(irp_here,int(dlog(accu)), & 
+             'the 2x2 sphichi of complex-valued eigenvectors is not diagonal')
+     endif
+     accu = sphichi(1,1)+sphichi(2,2)
+     if(dabs(accu).gt.1.d-10)then
+      call qp_bug(irp_here,int(dlog(dabs(2.d0-accu))), & 
+             'the trace of the 2x2 sphichi of complex-valued eigenvectors is not 0')
+     endif
+     if(dabs(sphichi(1,1)-0.5d0).gt.1.d-10)then
+      call qp_bug(irp_here,int(dlog(dabs(sphichi(1,1)-0.5d0))), & 
+             'the diagonal element of the 2x2 sphichi of complex-valued eigenvectors is not 1/2')
+     endif
+
+!     print*,'Smatrix sphichi'
+!     do i = 1, 2
+!      write(*,'(100(F16.10,X))')sphichi(i,:)
+!     enddo
       ! Phi_1 = Phi_r + Phi_i
       reigvec_srtd_im(1:n,2*ii-1)   = Phi_r(1:n)
       reigvec_srtd_im(1:n,2*ii-1)  += Phi_i(1:n)
@@ -221,30 +217,6 @@ subroutine non_hrmt_bieig_degen(n, A, thr_d, thr_nd, leigvec, reigvec, n_real_ei
       ! Xhi_2 = Xhi_r + Xhi_i
       leigvec_srtd_im(1:n,2*ii) = Xhi_r(1:n)
       leigvec_srtd_im(1:n,2*ii)+= Xhi_i(1:n)
-   enddo
-   print*,''
-   print*,'Passed main loop in imaginary cases'
-   print*,''
-   do i = 1, n_im
-    print*,'eigv_srtd_im(i)',eigv_srtd_im(i)
-    print*,'right eigvectors '
-    write(*,'(100(F16.10,X))')reigvec_srtd_im(1:n,i)
-    print*,'left eigvectors '
-    write(*,'(100(F16.10,X))')leigvec_srtd_im(1:n,i)
-   enddo
-   double precision, allocatable :: smat_vec_im(:,:)
-   allocate(smat_vec_im(n_im, n_im))
-   smat_vec_im = 0.d0
-   do i = 1, n_im
-    do j = 1, n_im
-     do k = 1, n_im
-      smat_vec_im(j,i) += leigvec_srtd_im(k,j) * reigvec_srtd_im(k,i)
-     enddo
-    enddo
-   enddo
-   print*,'Smatrix final condom !!'
-   do i = 1, n_im
-    write(*,'(100(F16.10,X))')smat_vec_im(i,:)
    enddo
   endif
   
@@ -268,26 +240,21 @@ subroutine non_hrmt_bieig_degen(n, A, thr_d, thr_nd, leigvec, reigvec, n_real_ei
   call dsort(real_eigv_total, iorder, n)
   do i = 1, n
    eigval(i) = real_eigv_total(i)
+   print*,i,eigval(i)
    reigvec(1:n,i) = reigvec_total(1:n,iorder(i))
    leigvec(1:n,i) = leigvec_total(1:n,iorder(i))
   enddo
-  print*,'titre de print'
+  double precision, allocatable :: leigvec_tmp(:,:)
+  allocate(leigvec_tmp(n,n))
+!  call get_inverse(reigvec,size(reigvec,1),n,leigvec_tmp,size(leigvec_tmp,1))
+  call get_pseudo_inverse(reigvec,size(reigvec,1),n,n,leigvec_tmp,size(leigvec_tmp,1),0.d0)
   do i = 1, n
-   print*,''
-   print*,'i,',i,eigval(i)
-   write(*,'(100(F16.10,X))')reigvec(1:n,i)
-   write(*,'(100(F16.10,X))')leigvec(1:n,i)
-   print*,''
-  enddo 
+   do j =1, n
+    leigvec(i,j) = leigvec_tmp(j,i)
+   enddo
+  enddo
  
 
-!  deallocate( list_good, iorder )
-!  deallocate( VL, VR )
-!
-!  ASSERT(n==n_real_eigv)
-!
-!  ! ---
-!
 !  ! check bi-orthogonality
 !
   thr_diag = 10.d0
