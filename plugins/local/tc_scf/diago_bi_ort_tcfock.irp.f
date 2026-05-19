@@ -34,12 +34,12 @@
     F_tmp(i,i) += level_shift_tcscf
   enddo
 
-  call non_hrmt_bieig( mo_num, F_tmp, thresh_biorthog_diag, thresh_biorthog_nondiag &
-                     , fock_tc_leigvec_mo, fock_tc_reigvec_mo                       & 
-                     , n_real_tc, eigval_right_tmp )
-!  call non_hrmt_bieig_degen_test( mo_num, F_tmp, overlap_mo_r, thresh_biorthog_diag, thresh_biorthog_nondiag &
+!  call non_hrmt_bieig( mo_num, F_tmp, thresh_biorthog_diag, thresh_biorthog_nondiag &
 !                     , fock_tc_leigvec_mo, fock_tc_reigvec_mo                       & 
 !                     , n_real_tc, eigval_right_tmp )
+  call non_hrmt_bieig_degen_test( mo_num, F_tmp, overlap_mo_r, thresh_biorthog_diag, thresh_biorthog_nondiag &
+                     , fock_tc_leigvec_mo, fock_tc_reigvec_mo                       & 
+                     , n_real_tc, eigval_right_tmp )
 
   deallocate(F_tmp)
 

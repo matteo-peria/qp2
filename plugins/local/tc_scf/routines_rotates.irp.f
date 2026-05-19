@@ -421,7 +421,7 @@ subroutine print_angles_tc()
     left  = overlap_mo_l(i,i)
     right = overlap_mo_r(i,i)
 !  print*,Fock_matrix_tc_mo_tot(i,i),left*right,angle_left_right(i)
-    print *, left*right, angle_left_right(i)
+    print *, i, left*right, angle_left_right(i)
   enddo
 
 end
