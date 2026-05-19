@@ -1229,7 +1229,7 @@ subroutine impose_orthog_svd_overlap(n, m, C, overlap)
   double precision, allocatable   :: S(:,:), tmp(:,:), Stmp(:,:)
   double precision, allocatable   :: U(:,:), Vt(:,:), D(:)
 
-  print *, ' apply SVD to orthogonalize vectors'
+!  print *, ' apply SVD to orthogonalize vectors'
 
   ! ---
 
