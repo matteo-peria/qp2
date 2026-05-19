@@ -83,7 +83,7 @@ subroutine rh_tcscf_diis()
 
   !do while((tc_grad .gt. dsqrt(thresh_tcscf)) .and. (er_DIIS .gt. dsqrt(thresh_tcscf)))
   do while(.not. converged)
-
+!    call print_angles_tc() 
     call wall_time(t0)
 
     it += 1
