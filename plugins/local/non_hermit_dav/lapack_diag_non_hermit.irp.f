@@ -1779,7 +1779,7 @@ subroutine check_biorthog(n, m, Vl, Vr, accu_d, accu_nd, S, thr_d, thr_nd, stop_
   ! ---
 
   if(stop_ifnot .and. ((accu_nd .gt. thr_nd) .or. dabs(accu_d-dble(m))/dble(m) .gt. thr_d)) then
-    print *, ' non bi-orthogonal vectors !'
+    print *, ' non bi-orthogonal vectors ! STOPPING BECAUSE OF THAT '
     print *, ' accu_nd = ', accu_nd
     print *, ' accu_d  = ', dabs(accu_d-dble(m))/dble(m)
     print *, ' overlap matrix:'

@@ -134,8 +134,10 @@ subroutine non_hrmt_bieig_degen(n, A, s_right_in, thr_d, thr_nd, leigvec, reigve
    iorder(i) = i
   enddo
   call dsort(real_eigv_total, iorder, n)
+ !print*,'Eigenvalues '
   do i = 1, n
    eigval(i) = real_eigv_total(i)
+ ! print*,i,eigval(i)
    reigvec(1:n,i) = reigvec_total(1:n,iorder(i))
   enddo
  deallocate(iorder)
@@ -168,8 +170,14 @@ subroutine non_hrmt_bieig_degen(n, A, s_right_in, thr_d, thr_nd, leigvec, reigve
      enddo
     enddo
     ! orthogonalize the right eigenvectors by diagonalizing the S matrix
-!!   call lapack_diagd(seigval,seigvec,sphichi,n_dim,n_dim)
-    call pivoted_cholesky( sphichi, n_dim, -1.d0, n_dim, seigvec)
+    call lapack_diagd(seigval,seigvec,sphichi,n_dim,n_dim)
+!   print*,'i,n_dim',i,n_dim
+!   print*,'eigenvalues of small smatrix of dim', n_dim
+!   do j = 1, n_dim
+!    print*,seigval(j)
+!   enddo
+
+!   call pivoted_cholesky( sphichi, n_dim, -1.d0, n_dim, seigvec)
     ! get the orthogonal eigenvectors in the big basis 
     reigvec_tmp = 0.d0
     do j = 1, n_dim
@@ -211,14 +219,61 @@ subroutine non_hrmt_bieig_degen(n, A, s_right_in, thr_d, thr_nd, leigvec, reigve
 
 
 
-  double precision, allocatable :: leigvec_tmp(:,:)
-  allocate(leigvec_tmp(n,n))
+  double precision, allocatable :: leigvec_tmp(:,:), S_tmp(:,:)
+  allocate(leigvec_tmp(n,n), S_tmp(n,n))
   call get_pseudo_inverse(reigvec,size(reigvec,1),n,n,leigvec_tmp,size(leigvec_tmp,1),0.d0)
   do i = 1, n
    do j =1, n
     leigvec(i,j) = leigvec_tmp(j,i)
    enddo
   enddo
+! S_tmp = 0.d0
+! do i = 1,n 
+!  do j = 1,n 
+!   do k = 1,n 
+!     S_tmp(i,j) += leigvec_tmp(i,k) * reigvec(k,j)
+!   enddo
+!  enddo
+! enddo
+! print*,'checking the s matrix with Pseudo inverse'
+! do i = 1, n
+!  if (dabs(S_tmp(i,i)-1.d0).gt.1.d-6)then
+!   print*,'i, S(i,i) = ',i,S_tmp(i,i)
+!  endif
+!  do j = 1, n
+!   if(i==j)cycle
+!   if (dabs(S_tmp(j,i)).gt.1.d-6)then
+!    print*,'j,i, S(j,i) = ',j,i,S_tmp(j,i)
+!   endif
+!  enddo
+! enddo
+
+! call get_inverse(reigvec,size(reigvec,1),n,leigvec_tmp,size(leigvec_tmp,1))
+! do i = 1, n
+!  do j =1, n
+!   leigvec(i,j) = leigvec_tmp(j,i)
+!  enddo
+! enddo
+! S_tmp = 0.d0
+! do i = 1,n 
+!  do j = 1,n 
+!   do k = 1,n 
+!     S_tmp(i,j) += leigvec_tmp(i,k) * reigvec(k,j)
+!   enddo
+!  enddo
+! enddo
+! print*,'checking the s matrix with inverse'
+! do i = 1, n
+!  if (dabs(S_tmp(i,i)-1.d0).gt.1.d-6)then
+!   print*,'i, S(i,i) = ',i,S_tmp(i,i)
+!  endif
+!  do j = 1, n
+!   if(i==j)cycle
+!   if (dabs(S_tmp(j,i)).gt.1.d-6)then
+!    print*,'j,i, S(j,i) = ',j,i,S_tmp(j,i)
+!   endif
+!  enddo
+! enddo
  
 
 !  ! check bi-orthogonality
@@ -228,7 +283,7 @@ subroutine non_hrmt_bieig_degen(n, A, s_right_in, thr_d, thr_nd, leigvec, reigve
 !
   n_real_eigv = n
   allocate( S(n_real_eigv,n_real_eigv) )
-  call check_biorthog(n, n_real_eigv, leigvec, reigvec, accu_d, accu_nd, S, thr_d, thr_nd, .false.)
+  call check_biorthog(n, n_real_eigv, leigvec, reigvec, accu_d, accu_nd, S, thr_d, thr_nd, .True.)
 !
   return
 

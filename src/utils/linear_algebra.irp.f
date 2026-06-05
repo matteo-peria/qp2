@@ -1365,6 +1365,7 @@ subroutine get_pseudo_inverse(A, LDA, m, n, C, LDC, cutoff)
     stop 1
   endif
 
+  print*,'Lowest singular value for pseudo inverse = ',D(1)
   if(D(1) .lt. 1d-14) then
     print*, ' largest singular value is very small:', D(1)
     n_svd = 1
