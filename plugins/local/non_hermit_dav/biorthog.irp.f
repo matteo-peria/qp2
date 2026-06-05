@@ -146,11 +146,13 @@ subroutine non_hrmt_bieig_degen(n, A, s_right_in, thr_d, thr_nd, leigvec, reigve
   allocate(deg_num(n),vec_tmp(n))
   call get_degen(eigval, thr, n, deg_num)
   double precision, allocatable :: reigvec_tmp(:,:)
+  integer :: count_mo
+  count_mo = 0
   do i = 1, n
     n_dim = deg_num(i)
+    count_mo += n_dim
     if(n_dim .le.1.)cycle
     ! buiding the overlap matrix between the degenerate right eigenvectors 
-  
     allocate(sphichi(n_dim, n_dim),seigval(n_dim), seigvec(n_dim, n_dim), reigvec_tmp(n,n_dim), iorder(n_dim))
     sphichi = 0.D0
     k = 0
@@ -168,7 +170,7 @@ subroutine non_hrmt_bieig_degen(n, A, s_right_in, thr_d, thr_nd, leigvec, reigve
      enddo
     enddo
     ! orthogonalize the right eigenvectors by diagonalizing the S matrix
-!!   call lapack_diagd(seigval,seigvec,sphichi,n_dim,n_dim)
+!   call lapack_diagd(seigval,seigvec,sphichi,n_dim,n_dim)
     call pivoted_cholesky( sphichi, n_dim, -1.d0, n_dim, seigvec)
     ! get the orthogonal eigenvectors in the big basis 
     reigvec_tmp = 0.d0
@@ -186,6 +188,9 @@ subroutine non_hrmt_bieig_degen(n, A, s_right_in, thr_d, thr_nd, leigvec, reigve
     deallocate(sphichi,seigval, seigvec, reigvec_tmp, iorder)
     
   enddo
+  if(count_mo.ne.n)then
+    call qp_bug(irp_here,count_mo,'count_mo is not equal to n !')
+  endif
  
   double precision :: accu_tot
   accu_tot = 0.d0
@@ -208,14 +213,12 @@ subroutine non_hrmt_bieig_degen(n, A, s_right_in, thr_d, thr_nd, leigvec, reigve
   print*,'Average residual of the right eigenvectors ',accu_tot/dble(n)
 
 
-
-
-
   double precision, allocatable :: leigvec_tmp(:,:)
   allocate(leigvec_tmp(n,n))
-  call get_pseudo_inverse(reigvec,size(reigvec,1),n,n,leigvec_tmp,size(leigvec_tmp,1),0.d0)
+!  call get_pseudo_inverse(reigvec,size(reigvec,1),n,n,leigvec_tmp,size(leigvec_tmp,1),0.d0)
+  call get_inverse(reigvec,size(reigvec,1),n,leigvec_tmp,size(leigvec_tmp,1))
   do i = 1, n
-   do j =1, n
+   do j = 1, n
     leigvec(i,j) = leigvec_tmp(j,i)
    enddo
   enddo
@@ -228,7 +231,7 @@ subroutine non_hrmt_bieig_degen(n, A, s_right_in, thr_d, thr_nd, leigvec, reigve
 !
   n_real_eigv = n
   allocate( S(n_real_eigv,n_real_eigv) )
-  call check_biorthog(n, n_real_eigv, leigvec, reigvec, accu_d, accu_nd, S, thr_d, thr_nd, .false.)
+  call check_biorthog(n, n, leigvec, reigvec, accu_d, accu_nd, S, thr_d, thr_nd, .True.)
 !
   return
 
