@@ -8,8 +8,20 @@ export QP_ROOT="$( cd "$(dirname "$0")" ; pwd -P )"
 echo "QP_ROOT="$QP_ROOT
 unset CCXX
 
-TREXIO_VERSION=2.6.1
-QMCKL_VERSION=1.1.0
+DEFAULT_TREXIO_VERSION="${TREXIO_VERSION:-}"
+DEFAULT_QMCKL_VERSION="${QMCKL_VERSION:-}"
+
+if [[ -f "${QP_ROOT}"/config/dependencies.rc ]] ; then
+        source "${QP_ROOT}"/config/dependencies.rc
+fi
+
+TREXIO_VERSION="${DEFAULT_TREXIO_VERSION:-${TREXIO_VERSION}}"
+QMCKL_VERSION="${DEFAULT_QMCKL_VERSION:-${QMCKL_VERSION}}"
+
+if [[ -z ${TREXIO_VERSION} || -z ${QMCKL_VERSION} ]] ; then
+        echo "$(basename $0): TREXIO_VERSION and QMCKL_VERSION must be defined."
+        exit 2
+fi
 
 # Download submodules
 git submodule init

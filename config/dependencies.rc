@@ -1,0 +1,7 @@
+# Default versions used by configure_new when installing dependencies.
+#
+# These values can be overridden from the environment, for example:
+#   TREXIO_VERSION=2.7.0 QMCKL_VERSION=1.2.0 ./configure_new -i trexio
+
+TREXIO_VERSION=2.6.1
+QMCKL_VERSION=1.1.0
