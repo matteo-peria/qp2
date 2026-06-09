@@ -286,9 +286,13 @@ CONFIGURE_FCFLAGS_ENV="FCFLAGS=\"${CONFIG_FCFLAGS}\""
 CONFIG_H5CC="$(find_hdf5_wrapper)"
 CONFIG_HDF5_CFLAGS="${HDF5_CFLAGS:-}"
 CONFIG_HDF5_LIBS="${HDF5_LIBS:-}"
+CONFIG_HDF5_PREFIX="${HDF5_PREFIX:-${HDF5_ROOT:-${HDF5_DIR:-}}}"
 TREXIO_H5CC_ENV=""
 if [[ -n ${CONFIG_H5CC} ]] ; then
         TREXIO_H5CC_ENV="H5CC=\"${CONFIG_H5CC}\""
+        if [[ -z ${CONFIG_HDF5_PREFIX} ]] ; then
+                CONFIG_HDF5_PREFIX="$(cd "$(dirname "${CONFIG_H5CC}")/.." ; pwd -P)"
+        fi
 fi
 
 if [[ -n ${CONFIG_H5CC} && ( -z ${CONFIG_HDF5_CFLAGS} || -z ${CONFIG_HDF5_LIBS} ) ]] ; then
@@ -319,6 +323,7 @@ fi
 
 TREXIO_CC_ENV="${CONFIGURE_CC_ENV}"
 TREXIO_HDF5_ENV=""
+TREXIO_HDF5_WITH_ARG=""
 if [[ -n ${TREXIO_CC} ]] ; then
         TREXIO_CC_ENV="CC=\"${TREXIO_CC}\""
 fi
@@ -328,11 +333,17 @@ fi
 if [[ -n ${CONFIG_HDF5_LIBS} ]] ; then
         TREXIO_HDF5_ENV="${TREXIO_HDF5_ENV} HDF5_LIBS=\"${CONFIG_HDF5_LIBS}\""
 fi
+if [[ -n ${CONFIG_HDF5_PREFIX} ]] ; then
+        TREXIO_HDF5_WITH_ARG="--with-hdf5=\"${CONFIG_HDF5_PREFIX}\""
+fi
 
 echo "Dependency checks will use CC=${CONFIG_CC}"
 echo "Dependency checks will use FC=${CONFIG_FC}"
 if [[ -n ${CONFIG_H5CC} ]] ; then
         echo "TREXIO HDF5 wrapper: ${CONFIG_H5CC}"
+fi
+if [[ -n ${CONFIG_HDF5_PREFIX} ]] ; then
+        echo "TREXIO HDF5 prefix: ${CONFIG_HDF5_PREFIX}"
 fi
 echo "TREXIO install will use ${TREXIO_CC_ENV}"
 
@@ -417,7 +428,7 @@ EOF
               rm -rf trexio-${VERSION}
               tar -zxf trexio-${VERSION}.tar.gz && rm trexio-${VERSION}.tar.gz
               cd trexio-${VERSION}
-              ${TREXIO_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${TREXIO_H5CC_ENV} ${TREXIO_HDF5_ENV} ./configure --prefix=\${QP_ROOT} || exit 1
+              ${TREXIO_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${TREXIO_H5CC_ENV} ${TREXIO_HDF5_ENV} ./configure --prefix=\${QP_ROOT} ${TREXIO_HDF5_WITH_ARG} || exit 1
               (make -j 8 || make) && make check && make -j 8 install
 EOF
     elif [[ ${PACKAGE} = qmckl ]] ; then
