@@ -6,7 +6,6 @@
 
 export QP_ROOT="$( cd "$(dirname "$0")" ; pwd -P )"
 echo "QP_ROOT="$QP_ROOT
-unset CCXX
 
 CONFIG_STATE_FILE="${QP_ROOT}/etc/last_config.rc"
 
