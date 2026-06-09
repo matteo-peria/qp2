@@ -320,6 +320,11 @@ CONFIG_H5CC="$(find_hdf5_wrapper)"
 CONFIG_HDF5_CFLAGS="${HDF5_CFLAGS:-}"
 CONFIG_HDF5_LIBS="${HDF5_LIBS:-}"
 CONFIG_HDF5_PREFIX="${HDF5_PREFIX:-${HDF5_ROOT:-${HDF5_DIR:-}}}"
+HDF5_CFLAGS_FROM_ENV=0
+if [[ -n ${CONFIG_HDF5_CFLAGS} ]] ; then
+        HDF5_CFLAGS_FROM_ENV=1
+fi
+HDF5_WRAPPER_HAS_INCLUDE=0
 TREXIO_H5CC_ENV=""
 if [[ -n ${CONFIG_H5CC} ]] ; then
         TREXIO_H5CC_ENV="H5CC=\"${CONFIG_H5CC}\""
@@ -332,7 +337,10 @@ if [[ -n ${CONFIG_H5CC} && ( -z ${CONFIG_HDF5_CFLAGS} || -z ${CONFIG_HDF5_LIBS} 
                 HDF5_SHOW_LIBS=""
                 for arg in ${HDF5_SHOW} ; do
                         case "${arg}" in
-                                -I*) HDF5_SHOW_CFLAGS="${HDF5_SHOW_CFLAGS} ${arg}" ;;
+                                -I*)
+                                        HDF5_WRAPPER_HAS_INCLUDE=1
+                                        HDF5_SHOW_CFLAGS="${HDF5_SHOW_CFLAGS} ${arg}"
+                                        ;;
                                 -L*|-l*|-Wl,*|*.so) HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} ${arg}" ;;
                                 *.a)
                                         lib_dir="$(dirname "${arg}")"
@@ -356,6 +364,8 @@ TREXIO_HDF5_ENV=""
 TREXIO_HDF5_WITH_ARG=""
 if [[ -n ${TREXIO_CC} ]] ; then
         TREXIO_CC_ENV="CC=\"${TREXIO_CC}\""
+elif [[ -n ${CONFIG_H5CC} && ${HDF5_WRAPPER_HAS_INCLUDE} = 0 && ${HDF5_CFLAGS_FROM_ENV} = 0 ]] ; then
+        TREXIO_CC_ENV="CC=\"${CONFIG_H5CC}\""
 fi
 if [[ -n ${CONFIG_HDF5_CFLAGS} ]] ; then
         TREXIO_HDF5_ENV="${TREXIO_HDF5_ENV} HDF5_CFLAGS=\"${CONFIG_HDF5_CFLAGS}\""
