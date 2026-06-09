@@ -11,4 +11,5 @@ config/qp_create_ninja.pickle
 src/*/.gitignore
 ezfio_interface.irp.f
 share
+etc/last_config.rc
 *.swp

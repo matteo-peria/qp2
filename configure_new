@@ -8,6 +8,8 @@ export QP_ROOT="$( cd "$(dirname "$0")" ; pwd -P )"
 echo "QP_ROOT="$QP_ROOT
 unset CCXX
 
+CONFIG_STATE_FILE="${QP_ROOT}/etc/last_config.rc"
+
 DEFAULT_TREXIO_VERSION="${TREXIO_VERSION:-}"
 DEFAULT_QMCKL_VERSION="${QMCKL_VERSION:-}"
 
@@ -47,17 +49,20 @@ Quantum Package configuration script.
 
 Usage:
   $(basename $0) -c <file>    
+  $(basename $0) -c <file> -i <package>
   $(basename $0) -h           
   $(basename $0) -i <package> 
   $(basename $0) -g [nvidia|intel|none]
 
 Options:
   -c  <file>        Define a COMPILATION configuration file,
-                    in "${QP_ROOT}/config/".
+                    in "${QP_ROOT}/config/". The selected file is remembered
+                    in "${CONFIG_STATE_FILE}".
   -h                Print the HELP message
   -i <package>      INSTALL <package>. Use at your OWN RISK:
                     no support will be provided for the installation of
-                    dependencies.
+                    dependencies. When -c is omitted, the remembered
+                    configuration file is reused when available.
   -g [nvidia|intel|none]  Choose GPU acceleration
 
 Example:
@@ -128,6 +133,7 @@ function find_hdf5_wrapper() {
 }
 
 PACKAGES=""
+CONFIG_FROM_COMMAND=0
 
 
 while getopts "d:c:i:g:h" c ; do
@@ -136,7 +142,8 @@ while getopts "d:c:i:g:h" c ; do
             case "$OPTARG" in
                 "") help ; break;;
                 *) if [[ -f $OPTARG ]] ; then
-                      CONFIG="$OPTARG"
+                      CONFIG="$(cd "$(dirname "$OPTARG")" ; pwd -P)/$(basename "$OPTARG")"
+                      CONFIG_FROM_COMMAND=1
                    else
                       error "error: configuration file $OPTARG not found."
                       exit 1
@@ -145,11 +152,10 @@ while getopts "d:c:i:g:h" c ; do
         i)
             case "$OPTARG" in
                 "") help ; break;;
-                *) PACKAGES="${PACKAGE} $OPTARG"
+                *) PACKAGES="${PACKAGES} $OPTARG"
             esac;;
         g)
-            GPU=$OPTARG;
-            break;;
+            GPU=$OPTARG;;
         h)
             help
             exit 0;;
@@ -158,6 +164,19 @@ while getopts "d:c:i:g:h" c ; do
             exit 2;;
     esac
 done
+
+if [[ ${CONFIG_FROM_COMMAND} = 1 ]] ; then
+        printf "CONFIG=%q\n" "${CONFIG}" > "${CONFIG_STATE_FILE}"
+elif [[ -f "${CONFIG_STATE_FILE}" ]] ; then
+        source "${CONFIG_STATE_FILE}"
+        if [[ -n ${CONFIG} ]] ; then
+                if [[ -f ${CONFIG} ]] ; then
+                        echo "Reusing configuration file: ${CONFIG}"
+                else
+                        error "remembered configuration file ${CONFIG} not found. Run $(basename $0) -c <file>."
+                fi
+        fi
+fi
 
 # Handle GPU acceleration
 rm -f ${QP_ROOT}/src/gpu_arch
