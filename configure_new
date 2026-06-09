@@ -284,15 +284,46 @@ CONFIGURE_FC_ENV="FC=\"${CONFIG_FC}\""
 CONFIGURE_CFLAGS_ENV="CFLAGS=\"${CONFIG_CFLAGS}\""
 CONFIGURE_FCFLAGS_ENV="FCFLAGS=\"${CONFIG_FCFLAGS}\""
 CONFIG_H5CC="$(find_hdf5_wrapper)"
+CONFIG_HDF5_CFLAGS="${HDF5_CFLAGS:-}"
+CONFIG_HDF5_LIBS="${HDF5_LIBS:-}"
 TREXIO_H5CC_ENV=""
 if [[ -n ${CONFIG_H5CC} ]] ; then
         TREXIO_H5CC_ENV="H5CC=\"${CONFIG_H5CC}\""
+fi
+
+if [[ -n ${CONFIG_H5CC} && ( -z ${CONFIG_HDF5_CFLAGS} || -z ${CONFIG_HDF5_LIBS} ) ]] ; then
+        HDF5_SHOW="$(${CONFIG_H5CC} -show 2> /dev/null || true)"
+        if [[ -n ${HDF5_SHOW} ]] ; then
+                HDF5_SHOW_CFLAGS=""
+                HDF5_SHOW_LIBS=""
+                for arg in ${HDF5_SHOW} ; do
+                        case "${arg}" in
+                                -I*) HDF5_SHOW_CFLAGS="${HDF5_SHOW_CFLAGS} ${arg}" ;;
+                                -L*|-l*|-Wl,*|*.a|*.so) HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} ${arg}" ;;
+                        esac
+                done
+                CONFIG_HDF5_CFLAGS="${CONFIG_HDF5_CFLAGS:-${HDF5_SHOW_CFLAGS}}"
+                CONFIG_HDF5_LIBS="${CONFIG_HDF5_LIBS:-${HDF5_SHOW_LIBS}}"
+        fi
+fi
+
+TREXIO_CC_ENV="${CONFIGURE_CC_ENV}"
+TREXIO_HDF5_ENV=""
+if [[ -n ${CONFIG_H5CC} ]] ; then
+        TREXIO_CC_ENV="CC=\"${CONFIG_H5CC}\""
+fi
+if [[ -n ${CONFIG_HDF5_CFLAGS} ]] ; then
+        TREXIO_HDF5_ENV="${TREXIO_HDF5_ENV} HDF5_CFLAGS=\"${CONFIG_HDF5_CFLAGS}\""
+fi
+if [[ -n ${CONFIG_HDF5_LIBS} ]] ; then
+        TREXIO_HDF5_ENV="${TREXIO_HDF5_ENV} HDF5_LIBS=\"${CONFIG_HDF5_LIBS}\""
 fi
 
 echo "Dependency checks will use CC=${CONFIG_CC}"
 echo "Dependency checks will use FC=${CONFIG_FC}"
 if [[ -n ${CONFIG_H5CC} ]] ; then
         echo "TREXIO HDF5 wrapper: ${CONFIG_H5CC}"
+        echo "TREXIO install will use CC=${CONFIG_H5CC}"
 fi
 
 # Make program believe stdin is a tty
@@ -362,7 +393,7 @@ EOF
               rm -rf trexio-${VERSION}
               tar -zxf trexio-${VERSION}.tar.gz && rm trexio-${VERSION}.tar.gz
               cd trexio-${VERSION}
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix=\${QP_ROOT} --without-hdf5
+              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix=\${QP_ROOT} --without-hdf5 || exit 1
               (make -j 8 || make) && make check && make -j 8 install
               tar -zxvf "\${QP_ROOT}"/external/qp2-dependencies/${ARCHITECTURE}/ninja.tar.gz 
               mv ninja "\${QP_ROOT}"/bin/
@@ -376,7 +407,7 @@ EOF
               rm -rf trexio-${VERSION}
               tar -zxf trexio-${VERSION}.tar.gz && rm trexio-${VERSION}.tar.gz
               cd trexio-${VERSION}
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${TREXIO_H5CC_ENV} ./configure --prefix=\${QP_ROOT}
+              ${TREXIO_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${TREXIO_H5CC_ENV} ${TREXIO_HDF5_ENV} ./configure --prefix=\${QP_ROOT} || exit 1
               (make -j 8 || make) && make check && make -j 8 install
 EOF
     elif [[ ${PACKAGE} = qmckl ]] ; then
@@ -388,7 +419,7 @@ EOF
               rm -rf qmckl-${VERSION}
               tar -zxf qmckl-${VERSION}.tar.gz && rm qmckl-${VERSION}.tar.gz
               cd qmckl-${VERSION}
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix=\${QP_ROOT} --enable-hpc --disable-doc
+              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix=\${QP_ROOT} --enable-hpc --disable-doc || exit 1
               (make -j 8 || make) && make check && make install
 EOF
     elif [[ ${PACKAGE} = qmckl-intel ]] ; then
