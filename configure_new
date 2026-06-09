@@ -1,0 +1,637 @@
+#!/bin/bash
+#
+# Quantum Package configuration script
+#
+
+
+export QP_ROOT="$( cd "$(dirname "$0")" ; pwd -P )"
+echo "QP_ROOT="$QP_ROOT
+unset CCXX
+
+TREXIO_VERSION=2.6.1
+QMCKL_VERSION=1.1.0
+
+# Download submodules
+git submodule init
+git submodule update
+
+# Update ARM or x86 dependencies
+SYSTEM=$(uname -s)
+if [[ $SYSTEM = "Linux" ]] ; then
+  SYSTEM=""
+fi
+ARCHITECTURE=$(uname -m)$SYSTEM
+cd ${QP_ROOT}/external/qp2-dependencies
+git checkout master
+git pull
+echo "Architecture: $ARCHITECTURE"
+cd ${QP_ROOT}
+
+
+function help()
+{
+    cat <<EOF
+Quantum Package configuration script.
+
+Usage:
+  $(basename $0) -c <file>    
+  $(basename $0) -h           
+  $(basename $0) -i <package> 
+  $(basename $0) -g [nvidia|intel|none]
+
+Options:
+  -c  <file>        Define a COMPILATION configuration file,
+                    in "${QP_ROOT}/config/".
+  -h                Print the HELP message
+  -i <package>      INSTALL <package>. Use at your OWN RISK:
+                    no support will be provided for the installation of
+                    dependencies.
+  -g [nvidia|intel|none]  Choose GPU acceleration
+
+Example:
+  ./$(basename $0) -c config/gfortran.cfg
+
+Note:
+  Users are encouraged to create their own configuration files instead of
+  modifying the existing ones.
+
+EOF
+    exit
+}
+
+function error() {
+    >&2 echo "$(basename $0): $@"
+    exit 2
+}
+
+function execute () {
+    local _command
+    echo "Executing:"
+    while read -r line; do
+      echo "  " $line
+      _command+="${line} ;"
+    done
+    sleep 1
+    echo ""
+    printf "\e[0;94m"
+    ( eval "set -x ; $_command set +x" ) || exit -1
+    printf "\e[m"
+    echo ""
+}
+
+function get_config_option() {
+        if [[ -z ${CONFIG} ]] ; then
+                return 0
+        fi
+
+        python3 - "${QP_ROOT}" "${CONFIG}" "$1" <<'PY'
+import os
+import sys
+
+qp_root, config, option = sys.argv[1:4]
+sys.path.insert(0, os.path.join(qp_root, "scripts", "compilation"))
+
+from read_compilation_cfg import get_compilation_option
+
+value = get_compilation_option(config, option).strip()
+if value:
+    print(value)
+PY
+}
+
+function find_hdf5_wrapper() {
+        if [[ -n ${H5CC} ]] ; then
+                echo "${H5CC}"
+                return 0
+        fi
+
+        local wrapper
+        for wrapper in h5pcc h5cc ; do
+                wrapper=$(find_exe "${wrapper}")
+                if [[ ${wrapper} != $(not_found) ]] ; then
+                        echo "${wrapper}"
+                        return 0
+                fi
+        done
+}
+
+PACKAGES=""
+
+
+while getopts "d:c:i:g:h" c ; do
+    case "$c" in
+        c)
+            case "$OPTARG" in
+                "") help ; break;;
+                *) if [[ -f $OPTARG ]] ; then
+                      CONFIG="$OPTARG"
+                   else
+                      error "error: configuration file $OPTARG not found."
+                      exit 1
+                   fi
+            esac;;
+        i)
+            case "$OPTARG" in
+                "") help ; break;;
+                *) PACKAGES="${PACKAGE} $OPTARG"
+            esac;;
+        g)
+            GPU=$OPTARG;
+            break;;
+        h)
+            help
+            exit 0;;
+        *)
+            error $(basename $0)": unknown option $c, try -h for help"
+            exit 2;;
+    esac
+done
+
+# Handle GPU acceleration
+rm -f ${QP_ROOT}/src/gpu_arch
+rm -f ${QP_ROOT}/src/*/gpu_arch
+case "$GPU" in
+  amd) # AMD
+     echo "Activating AMD GPU acceleration"
+     ln -s ${QP_ROOT}/plugins/local/gpu_amd ${QP_ROOT}/src/gpu_arch
+     ;;
+  intel) # Intel
+     echo "Activating Intel GPU acceleration (EXPERIMENTAL)"
+     ln -s ${QP_ROOT}/plugins/local/gpu_intel ${QP_ROOT}/src/gpu_arch
+     ;;
+  nvidia) # Nvidia
+     echo "Activating Nvidia GPU acceleration"
+     ln -s ${QP_ROOT}/plugins/local/gpu_nvidia ${QP_ROOT}/src/gpu_arch
+     ;;
+  *) # No Acceleration
+     echo "Disabling GPU acceleration"
+     ln -s ${QP_ROOT}/plugins/local/gpu_x86 ${QP_ROOT}/src/gpu_arch
+     ;;
+esac
+
+# Trim leading and trailing spaces
+PACKAGES=$(echo $PACKAGES | xargs)
+
+echo "export QP_ROOT=\"$QP_ROOT\"" > ${QP_ROOT}/etc/00.qp_root.rc
+
+source ${QP_ROOT}/quantum_package.rc
+
+
+
+function fail() {
+        echo "You can try to install it using the -i option."
+        echo "Please refer to INSTALL.rst to install the missing dependencies."
+        exit -1
+}
+
+function success() {
+        echo ""
+        echo "Configuration successful."
+        exit 0
+}
+
+function not_found() {
+   echo 'not_found'
+}
+
+function find_exe() {
+        which $1 2> /dev/null || not_found
+}
+
+function find_python_lib() {
+        python3 -c "import $1" &> /dev/null && echo "$1" || not_found
+}
+
+function find_lib() {
+        echo "int main() { return 0; }" > "${QP_ROOT}"/external/tmp.c
+        eval "${CONFIG_CC} ${CONFIG_CFLAGS} \"${QP_ROOT}\"/external/tmp.c -o \"${QP_ROOT}\"/external/tmp.exe ${CONFIG_LIB} $*" 2> /dev/null
+        if [[ -x "${QP_ROOT}"/external/tmp.exe ]] ; then
+                rm "${QP_ROOT}"/external/tmp.exe "${QP_ROOT}"/external/tmp.c
+                echo "found"
+        else
+                rm "${QP_ROOT}"/external/tmp.c
+                not_found
+        fi
+}
+
+function find_fortran_lib() {
+        echo "program main" > "${QP_ROOT}"/external/tmp.f90
+        echo "end program main" >> "${QP_ROOT}"/external/tmp.f90
+        eval "${CONFIG_FC} ${CONFIG_FCFLAGS} \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe ${CONFIG_LIB} $*" 2> /dev/null
+        if [[ -x "${QP_ROOT}"/external/tmp.exe ]] ; then
+                rm "${QP_ROOT}"/external/tmp.exe "${QP_ROOT}"/external/tmp.f90
+                echo "found"
+        else
+                rm "${QP_ROOT}"/external/tmp.f90
+                not_found
+        fi
+}
+
+function find_dir() {
+        if [[ -d $1 ]] ; then
+                echo "$1"
+        else
+                not_found
+        fi
+}
+
+CONFIG_CC="$(get_config_option CC)"
+CONFIG_FC="$(get_config_option FC)"
+CONFIG_CFLAGS="$(get_config_option CFLAGS)"
+CONFIG_FCFLAGS="$(get_config_option FCFLAGS)"
+CONFIG_LIB="$(get_config_option LIB)"
+
+if [[ -z ${CONFIG_CC} ]] ; then
+        CONFIG_CC="${CC:-gcc}"
+fi
+
+if [[ -z ${CONFIG_FC} ]] ; then
+        CONFIG_FC="${FC:-gfortran}"
+fi
+
+CONFIGURE_CC_ENV="CC=\"${CONFIG_CC}\""
+CONFIGURE_FC_ENV="FC=\"${CONFIG_FC}\""
+CONFIGURE_CFLAGS_ENV="CFLAGS=\"${CONFIG_CFLAGS}\""
+CONFIGURE_FCFLAGS_ENV="FCFLAGS=\"${CONFIG_FCFLAGS}\""
+CONFIG_H5CC="$(find_hdf5_wrapper)"
+TREXIO_H5CC_ENV=""
+if [[ -n ${CONFIG_H5CC} ]] ; then
+        TREXIO_H5CC_ENV="H5CC=\"${CONFIG_H5CC}\""
+fi
+
+echo "Dependency checks will use CC=${CONFIG_CC}"
+echo "Dependency checks will use FC=${CONFIG_FC}"
+if [[ -n ${CONFIG_H5CC} ]] ; then
+        echo "TREXIO HDF5 wrapper: ${CONFIG_H5CC}"
+fi
+
+# Make program believe stdin is a tty
+function faketty() {
+  script -qfc "$(printf "%q " "$@")" /dev/null
+}
+
+# Install IRPF90 if needed
+IRPF90=$(find_exe irpf90)
+if [[ ${IRPF90} = $(not_found) ]] ; then
+        make -C ${QP_ROOT}/external/irpf90
+fi
+
+
+
+if [[ "${PACKAGES}.x" != ".x" ]] ; then
+        printf "\e[0;31m"
+        echo ""
+      echo "#########################################################"
+      echo "#                                                       #"
+      echo "#       Automatic installation of dependencies          #"
+      echo "#                                                       #"
+      echo "# USE AT YOUR OWN RISK :                                #"
+      echo "# No support will be provided by the quantum package    #"
+      echo "# developers for the installation of external software. #"
+      echo "#                                                       #"
+      echo "# You may refer to the INSTALL.rst file for help.       #"
+      echo "#                                                       #"
+      echo "#########################################################"
+        printf "\e[m"
+        echo ""
+        sleep 1
+fi
+
+if [[ ${PACKAGES} = all ]] ; then
+        PACKAGES="cmake zlib ninja zeromq f77zmq gmp ocaml docopt resultsFile bats trexio armadillo openorb simple_gpu"
+fi
+
+
+for PACKAGE in ${PACKAGES} ; do
+
+    if [[ ${PACKAGE} = ninja ]] ; then
+
+            execute << EOF
+              rm -f "\${QP_ROOT}"/bin/ninja
+              tar -zxvf "\${QP_ROOT}"/external/qp2-dependencies/${ARCHITECTURE}/ninja.tar.gz 
+              mv ninja "\${QP_ROOT}"/bin/
+EOF
+
+    elif [[ ${PACKAGE} = cmake ]] ; then
+
+            VERSION=3.31.10
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              rm -f cmake-${VERSION}-linux-${ARCHITECTURE}.sh
+              wget https://github.com/Kitware/CMake/releases/download/v${VERSION}/cmake-${VERSION}-linux-${ARCHITECTURE}.sh
+              chmod +x cmake-${VERSION}-linux-${ARCHITECTURE}.sh
+              ./cmake-${VERSION}-linux-${ARCHITECTURE}.sh --prefix=$QP_ROOT --skip-license
+EOF
+
+    elif [[ ${PACKAGE} = trexio-nohdf5 ]] ; then
+
+            VERSION=$TREXIO_VERSION
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              wget https://github.com/TREX-CoE/trexio/releases/download/v${VERSION}/trexio-${VERSION}.tar.gz
+              rm -rf trexio-${VERSION}
+              tar -zxf trexio-${VERSION}.tar.gz && rm trexio-${VERSION}.tar.gz
+              cd trexio-${VERSION}
+              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix=\${QP_ROOT} --without-hdf5
+              (make -j 8 || make) && make check && make -j 8 install
+              tar -zxvf "\${QP_ROOT}"/external/qp2-dependencies/${ARCHITECTURE}/ninja.tar.gz 
+              mv ninja "\${QP_ROOT}"/bin/
+EOF
+    elif [[ ${PACKAGE} = trexio ]] ; then
+
+            VERSION=$TREXIO_VERSION
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              wget https://github.com/TREX-CoE/trexio/releases/download/v${VERSION}/trexio-${VERSION}.tar.gz
+              rm -rf trexio-${VERSION}
+              tar -zxf trexio-${VERSION}.tar.gz && rm trexio-${VERSION}.tar.gz
+              cd trexio-${VERSION}
+              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${TREXIO_H5CC_ENV} ./configure --prefix=\${QP_ROOT}
+              (make -j 8 || make) && make check && make -j 8 install
+EOF
+    elif [[ ${PACKAGE} = qmckl ]] ; then
+
+            VERSION=$QMCKL_VERSION
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              wget https://github.com/TREX-CoE/qmckl/releases/download/v${VERSION}/qmckl-${VERSION}.tar.gz
+              rm -rf qmckl-${VERSION}
+              tar -zxf qmckl-${VERSION}.tar.gz && rm qmckl-${VERSION}.tar.gz
+              cd qmckl-${VERSION}
+              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix=\${QP_ROOT} --enable-hpc --disable-doc
+              (make -j 8 || make) && make check && make install
+EOF
+    elif [[ ${PACKAGE} = qmckl-intel ]] ; then
+
+            VERSION=$QMCKL_VERSION
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              wget https://github.com/TREX-CoE/qmckl/releases/download/v${VERSION}/qmckl-${VERSION}.tar.gz
+              rm -rf qmckl-${VERSION}
+              tar -zxf qmckl-${VERSION}.tar.gz && rm qmckl-${VERSION}.tar.gz
+              cd qmckl-${VERSION}
+              ./configure --prefix=\${QP_ROOT} --enable-hpc --disable-doc --with-icc --with-ifort CFLAGS='-g'
+              (make -j 8 || make) && make check && make install
+EOF
+ 
+
+    elif [[ ${PACKAGE} = gmp ]] ; then
+
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              tar --bzip2 --extract --file qp2-dependencies/gmp-6.1.2.tar.bz2
+              cd gmp-6.1.2
+              ./configure --prefix=$QP_ROOT && make -j 8
+              make -j 8 install
+EOF
+
+    elif [[ ${PACKAGE} = zeromq ]] ; then
+
+            execute << EOF
+              export CC=gcc
+              export CXX=g++
+              cd "\${QP_ROOT}"/external
+              tar --gunzip --extract --file qp2-dependencies/zeromq-4.2.5.tar.gz
+              cd zeromq-*
+              [[ "${SYSTEM}" = "Darwin" ]] && ./autogen.sh
+              ./configure --prefix="\$QP_ROOT" --without-libsodium --enable-libunwind=no
+              make -j 8
+              make install
+EOF
+
+
+    elif [[ ${PACKAGE} = f77zmq ]] ; then
+
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              tar --gunzip --extract --file qp2-dependencies/f77-zmq-4.3.?.tar.gz
+              cd f77-zmq-*
+              ./configure --prefix=\$QP_ROOT
+              export ZMQ_H="\$QP_ROOT"/include/zmq.h
+              make && make check && make install
+EOF
+
+
+    elif [[ ${PACKAGE} = ocaml ]] ; then
+
+         execute <<EOF
+            source "${QP_ROOT}"/quantum_package.rc
+            rm -rf "${QP_ROOT}"/external/opampack
+            cd "${QP_ROOT}"/external/
+            tar --gunzip --extract --file qp2-dependencies/${ARCHITECTURE}/opampack.tar.gz
+            cd "${QP_ROOT}"/external/opampack
+            ./install.sh
+            export OPAMROOT="${QP_ROOT}"/external/opampack/opamroot
+            eval \$("${QP_ROOT}"/external/opampack/opam env)
+EOF
+
+    elif [[ ${PACKAGE} = bse ]] ; then
+
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              tar --gunzip --extract --file qp2-dependencies/bse-v0.8.11.tar.gz
+              python3 -m pip install -e basis_set_exchange-*
+EOF
+
+    elif [[ ${PACKAGE} = zlib ]] ; then
+
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              tar --gunzip --extract --file qp2-dependencies/zlib-1.2.11.tar.gz
+              cd zlib-*/
+              ./configure --prefix=${QP_ROOT} && \
+              make && make install
+EOF
+
+
+    elif [[ ${PACKAGE} = docopt ]] ; then
+
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              tar --gunzip --extract --file qp2-dependencies/docopt-0.6.2.tar.gz
+              mv docopt-*/docopt.py "\${QP_ROOT}/external/Python"
+EOF
+
+
+    elif [[ ${PACKAGE} = resultsFile ]] ; then
+
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              tar --gunzip --extract --file qp2-dependencies/resultsFile-v2.3.tar.gz
+              mv resultsFile-*/resultsFile "\${QP_ROOT}/external/Python/"
+EOF
+
+    elif [[ ${PACKAGE} = bats ]] ; then
+
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              tar -zxf qp2-dependencies/bats-v1.7.0.tar.gz
+              ( cd bats-core-1.7.0/ ; ./install.sh \${QP_ROOT})
+EOF
+
+    elif [[ ${PACKAGE} = armadillo ]] ; then
+
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              cd armadillo-code
+              #TODO
+EOF
+
+    elif [[ ${PACKAGE} = openorb ]] ; then
+
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              cd OpenOrbitalOptimizer
+              #TODO
+EOF
+    elif [[ ${PACKAGE} = simple_gpu ]] ; then
+
+            VERSION=1.0.2
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              wget https://github.com/scemama/simple_gpu/releases/download/v${VERSION}/simple_gpu-${VERSION}.tar.gz
+              rm -rf simple_gpu-${VERSION}
+              tar -zxf simple_gpu-${VERSION}.tar.gz && rm simple_gpu-${VERSION}.tar.gz
+              cd simple_gpu-${VERSION}
+              ./configure --prefix=\${QP_ROOT} 
+              (make -j 8 || make) && make check && make install
+EOF
+    else
+        error "${PACKAGE} unknown."
+        fail
+    fi
+
+
+done
+
+source ${QP_ROOT}/quantum_package.rc
+
+CMAKE=$(find_exe cmake)
+if [[ ${CMAKE} = $(not_found) ]] ; then
+        error "cmake (cmake) is not installed."
+        fail
+fi
+
+NINJA=$(find_exe ninja)
+if [[ ${NINJA} = $(not_found) ]] ; then
+        error "ninja (ninja) is not installed."
+        fail
+fi
+
+ZEROMQ=$(find_lib -lzmq)
+if [[ ${ZEROMQ} = $(not_found) ]] ; then
+
+        MAKE=$(find_exe make)
+        if [[ ${MAKE} = $(not_found) ]] ; then
+                error "make is not installed."
+                fail
+        fi
+
+        M4=$(find_exe autoreconf)
+        if [[ ${M4} = $(not_found) ]] ; then
+                error "autoreconf is not installed."
+                fail
+        fi
+
+        M4=$(find_exe m4)
+        if [[ ${M4} = $(not_found) ]] ; then
+                error "m4 preprocesssor is not installed."
+                fail
+        fi
+
+        error "ZeroMQ (zeromq) is not installed."
+        fail
+fi
+
+TREXIO=$(find_fortran_lib -ltrexio)
+if [[ ${TREXIO} = $(not_found) ]] ; then
+        error "TREXIO (trexio | trexio-nohdf5) is not installed. If you don't have HDF5, use trexio-nohdf5"
+        fail
+fi
+
+QMCKL=$(find_fortran_lib -lqmckl)
+if [[ ${QMCKL} = $(not_found) ]] ; then
+        error "QMCkl (qmckl | qmckl-intel) is not installed."
+        fail
+fi
+
+F77ZMQ=$(find_fortran_lib -lzmq -lf77zmq -lpthread)
+if [[ ${F77ZMQ} = $(not_found) ]] ; then
+        error "Fortran binding of ZeroMQ (f77zmq) is not installed."
+        fail
+fi
+
+GMP=$(find_lib -lgmp)
+if [[ ${GMP} = $(not_found) ]] ; then
+        error "GMP (gmp) is not installed."
+        fail
+fi
+
+OCAML=$(find_exe ocamlc)
+if [[ ${OCAML} = $(not_found) ]] ; then
+        error "OCaml (ocaml) compiler is not installed."
+        fail
+fi
+
+ZLIB=$(find_lib -lz)
+if [[ ${ZLIB} = $(not_found) ]] ; then
+        error "Zlib (zlib) is not installed."
+        fail
+fi
+
+DOCOPT=$(find_python_lib docopt)
+if [[ ${DOCOPT} = $(not_found) ]] ; then
+        error "docopt (docopt) is not installed."
+        fail
+fi
+
+RESULTSFILE=$(find_python_lib resultsFile)
+if [[ ${RESULTSFILE} = $(not_found) ]] ; then
+        error "resultsFile (resultsFile) is not installed."
+        fail
+fi
+
+SIMPLEGPU=$(find_lib -lsimple_gpu-cpu)
+if [[ ${SIMPLEGPU} = $(not_found) ]] ; then
+        error "SimpleGPU (simple_gpu) is not installed."
+        fail
+fi
+
+
+printf "\e[0;34m"
+echo "  ___________________________  "
+echo "< All dependencies installed. >"
+echo "  ---------------------------  "
+echo "         \   ^__^              "
+echo "          \  (oo)\_______      "
+echo "             (__)\       )\/\. "
+echo "                 ||----w |     "
+echo "                 ||     ||     "
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+echo ""
+echo "If you have PIP, you can install the Basis Set Exchange command-line tool:"
+echo ""
+echo "  ./configure -i bse"
+echo ""
+echo "This will enable the usage of qp_basis to install extra basis sets."
+echo ""
+echo ""
+printf "\e[m\n"
+
+
+if [[ -n $CONFIG ]] ; then
+
+        "${QP_ROOT}"/scripts/compilation/qp_create_ninja create --development "${CONFIG}"
+fi
+
+if [[ -f ${QP_ROOT}/build.ninja ]] ; then
+  [[ -z ${TRAVIS} ]] && echo "You can now run ./bin/qpsh to enter in the QP shell mode :)"
+else
+      echo ""
+      echo "${QP_ROOT}/build.ninja does not exist,"
+      echo "you need to specify the COMPILATION configuration file."
+      echo "See  ./configure -h  for more details."
+      echo ""
+fi
+
+exit 0
