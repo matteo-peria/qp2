@@ -90,7 +90,7 @@ function execute () {
     sleep 1
     echo ""
     printf "\e[0;94m"
-    ( eval "set -x ; $_command set +x" ) || exit -1
+    ( eval "set -e ; set -x ; $_command set +x" ) || exit -1
     printf "\e[m"
     echo ""
 }
@@ -299,7 +299,17 @@ if [[ -n ${CONFIG_H5CC} && ( -z ${CONFIG_HDF5_CFLAGS} || -z ${CONFIG_HDF5_LIBS} 
                 for arg in ${HDF5_SHOW} ; do
                         case "${arg}" in
                                 -I*) HDF5_SHOW_CFLAGS="${HDF5_SHOW_CFLAGS} ${arg}" ;;
-                                -L*|-l*|-Wl,*|*.a|*.so) HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} ${arg}" ;;
+                                -L*|-l*|-Wl,*|*.so) HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} ${arg}" ;;
+                                *.a)
+                                        lib_dir="$(dirname "${arg}")"
+                                        lib_base="$(basename "${arg}" .a)"
+                                        lib_name="${lib_base#lib}"
+                                        if [[ -f "${lib_dir}/${lib_base}.so" ]] ; then
+                                                HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} -L${lib_dir} -l${lib_name}"
+                                        else
+                                                HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} ${arg}"
+                                        fi
+                                        ;;
                         esac
                 done
                 CONFIG_HDF5_CFLAGS="${CONFIG_HDF5_CFLAGS:-${HDF5_SHOW_CFLAGS}}"
@@ -309,8 +319,8 @@ fi
 
 TREXIO_CC_ENV="${CONFIGURE_CC_ENV}"
 TREXIO_HDF5_ENV=""
-if [[ -n ${CONFIG_H5CC} ]] ; then
-        TREXIO_CC_ENV="CC=\"${CONFIG_H5CC}\""
+if [[ -n ${TREXIO_CC} ]] ; then
+        TREXIO_CC_ENV="CC=\"${TREXIO_CC}\""
 fi
 if [[ -n ${CONFIG_HDF5_CFLAGS} ]] ; then
         TREXIO_HDF5_ENV="${TREXIO_HDF5_ENV} HDF5_CFLAGS=\"${CONFIG_HDF5_CFLAGS}\""
@@ -323,8 +333,8 @@ echo "Dependency checks will use CC=${CONFIG_CC}"
 echo "Dependency checks will use FC=${CONFIG_FC}"
 if [[ -n ${CONFIG_H5CC} ]] ; then
         echo "TREXIO HDF5 wrapper: ${CONFIG_H5CC}"
-        echo "TREXIO install will use CC=${CONFIG_H5CC}"
 fi
+echo "TREXIO install will use ${TREXIO_CC_ENV}"
 
 # Make program believe stdin is a tty
 function faketty() {
