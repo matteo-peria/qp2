@@ -280,7 +280,7 @@ function find_lib() {
 function find_fortran_lib() {
         echo "program main" > "${QP_ROOT}"/external/tmp.f90
         echo "end program main" >> "${QP_ROOT}"/external/tmp.f90
-        eval "${CONFIG_FC} ${CONFIG_FCFLAGS} \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe ${CONFIG_LIB} $*" 2> /dev/null
+        eval "${CONFIG_FC} ${CONFIG_FCFLAGS} \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe ${CONFIG_LIB} ${BLAS_LIBS:-${CONFIG_LAPACK_LIB}} ${LAPACK_LIBS:-${CONFIG_LAPACK_LIB}} $*" 2> /dev/null
         if [[ -x "${QP_ROOT}"/external/tmp.exe ]] ; then
                 rm "${QP_ROOT}"/external/tmp.exe "${QP_ROOT}"/external/tmp.f90
                 echo "found"
@@ -303,6 +303,7 @@ CONFIG_FC="$(get_config_option FC)"
 CONFIG_CFLAGS="$(get_config_option CFLAGS)"
 CONFIG_FCFLAGS="$(get_config_option FCFLAGS)"
 CONFIG_LIB="$(get_config_option LIB)"
+CONFIG_LAPACK_LIB="$(get_config_option LAPACK_LIB)"
 
 if [[ -z ${CONFIG_CC} ]] ; then
         CONFIG_CC="${CC:-gcc}"
@@ -314,8 +315,12 @@ fi
 
 CONFIGURE_CC_ENV="CC=\"${CONFIG_CC}\""
 CONFIGURE_FC_ENV="FC=\"${CONFIG_FC}\""
+CONFIGURE_F77_ENV="F77=\"${F77:-${CONFIG_FC}}\""
 CONFIGURE_CFLAGS_ENV="CFLAGS=\"${CONFIG_CFLAGS}\""
 CONFIGURE_FCFLAGS_ENV="FCFLAGS=\"${CONFIG_FCFLAGS}\""
+CONFIGURE_FFLAGS_ENV="FFLAGS=\"${FFLAGS:-${CONFIG_FCFLAGS}}\""
+CONFIGURE_BLAS_ENV="BLAS_LIBS=\"${BLAS_LIBS:-${CONFIG_LAPACK_LIB}}\""
+CONFIGURE_LAPACK_ENV="LAPACK_LIBS=\"${LAPACK_LIBS:-${CONFIG_LAPACK_LIB}}\""
 CONFIG_H5CC="$(find_hdf5_wrapper)"
 CONFIG_HDF5_CFLAGS="${HDF5_CFLAGS:-}"
 CONFIG_HDF5_LIBS="${HDF5_LIBS:-}"
@@ -384,6 +389,12 @@ fi
 
 echo "Dependency checks will use CC=${CONFIG_CC}"
 echo "Dependency checks will use FC=${CONFIG_FC}"
+if [[ -n ${BLAS_LIBS:-${CONFIG_LAPACK_LIB}} ]] ; then
+        echo "Dependency checks will use BLAS_LIBS=${BLAS_LIBS:-${CONFIG_LAPACK_LIB}}"
+fi
+if [[ -n ${LAPACK_LIBS:-${CONFIG_LAPACK_LIB}} ]] ; then
+        echo "Dependency checks will use LAPACK_LIBS=${LAPACK_LIBS:-${CONFIG_LAPACK_LIB}}"
+fi
 if [[ -n ${CONFIG_H5CC} ]] ; then
         echo "TREXIO HDF5 wrapper: ${CONFIG_H5CC}"
 fi
@@ -485,7 +496,7 @@ EOF
               rm -rf qmckl-${VERSION}
               tar -zxf qmckl-${VERSION}.tar.gz && rm qmckl-${VERSION}.tar.gz
               cd qmckl-${VERSION}
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix=\${QP_ROOT} --enable-hpc --disable-doc || exit 1
+              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_F77_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${CONFIGURE_FFLAGS_ENV} ${CONFIGURE_BLAS_ENV} ${CONFIGURE_LAPACK_ENV} ./configure --prefix=\${QP_ROOT} --enable-hpc --disable-doc || exit 1
               (make -j 8 || make) && make check && make install
 EOF
     elif [[ ${PACKAGE} = qmckl-intel ]] ; then
@@ -620,7 +631,7 @@ EOF
               rm -rf simple_gpu-${VERSION}
               tar -zxf simple_gpu-${VERSION}.tar.gz && rm simple_gpu-${VERSION}.tar.gz
               cd simple_gpu-${VERSION}
-              ./configure --prefix=\${QP_ROOT} 
+              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_F77_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${CONFIGURE_FFLAGS_ENV} ${CONFIGURE_BLAS_ENV} ${CONFIGURE_LAPACK_ENV} ./configure --prefix=\${QP_ROOT} || exit 1
               (make -j 8 || make) && make check && make install
 EOF
     else
