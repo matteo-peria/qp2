@@ -64,8 +64,9 @@ Options:
                     dependencies. When -c is omitted, the remembered
                     configuration file is reused when available.
   -g [nvidia|intel|none]  Choose GPU acceleration
-  --with-hdf5 <path>      HDF5 installation prefix to pass to TREXIO.
-                          Equivalent to setting HDF5_PREFIX=<path>.
+  --with-hdf5 <path>      HDF5 installation prefix to pass to TREXIO when it
+                          contains include/hdf5.h. Otherwise, wrapper-derived
+                          HDF5_CFLAGS/HDF5_LIBS are used.
 
 Example:
   ./$(basename $0) -c config/gfortran.cfg
@@ -322,9 +323,6 @@ CONFIG_HDF5_PREFIX="${HDF5_PREFIX:-${HDF5_ROOT:-${HDF5_DIR:-}}}"
 TREXIO_H5CC_ENV=""
 if [[ -n ${CONFIG_H5CC} ]] ; then
         TREXIO_H5CC_ENV="H5CC=\"${CONFIG_H5CC}\""
-        if [[ -z ${CONFIG_HDF5_PREFIX} ]] ; then
-                CONFIG_HDF5_PREFIX="$(cd "$(dirname "${CONFIG_H5CC}")/.." ; pwd -P)"
-        fi
 fi
 
 if [[ -n ${CONFIG_H5CC} && ( -z ${CONFIG_HDF5_CFLAGS} || -z ${CONFIG_HDF5_LIBS} ) ]] ; then
@@ -366,7 +364,12 @@ if [[ -n ${CONFIG_HDF5_LIBS} ]] ; then
         TREXIO_HDF5_ENV="${TREXIO_HDF5_ENV} HDF5_LIBS=\"${CONFIG_HDF5_LIBS}\""
 fi
 if [[ -n ${CONFIG_HDF5_PREFIX} ]] ; then
-        TREXIO_HDF5_WITH_ARG="--with-hdf5=\"${CONFIG_HDF5_PREFIX}\""
+        if [[ -f "${CONFIG_HDF5_PREFIX}/include/hdf5.h" ]] ; then
+                TREXIO_HDF5_WITH_ARG="--with-hdf5=\"${CONFIG_HDF5_PREFIX}\""
+        else
+                echo "Warning: ${CONFIG_HDF5_PREFIX}/include/hdf5.h not found; not passing --with-hdf5 to TREXIO."
+                echo "         Using HDF5_CFLAGS/HDF5_LIBS from the HDF5 wrapper or environment instead."
+        fi
 fi
 
 echo "Dependency checks will use CC=${CONFIG_CC}"
