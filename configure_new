@@ -51,6 +51,7 @@ Usage:
   $(basename $0) -c <file> -i <package>
   $(basename $0) -h           
   $(basename $0) -i <package> 
+  $(basename $0) -i trexio --with-hdf5 <path>
   $(basename $0) -g [nvidia|intel|none]
 
 Options:
@@ -63,6 +64,8 @@ Options:
                     dependencies. When -c is omitted, the remembered
                     configuration file is reused when available.
   -g [nvidia|intel|none]  Choose GPU acceleration
+  --with-hdf5 <path>      HDF5 installation prefix to pass to TREXIO.
+                          Equivalent to setting HDF5_PREFIX=<path>.
 
 Example:
   ./$(basename $0) -c config/gfortran.cfg
@@ -133,6 +136,35 @@ function find_hdf5_wrapper() {
 
 PACKAGES=""
 CONFIG_FROM_COMMAND=0
+
+ARGS=()
+while [[ $# -gt 0 ]] ; do
+    case "$1" in
+        --with-hdf5=*)
+            HDF5_PREFIX="${1#*=}"
+            ;;
+        --with-hdf5)
+            shift
+            if [[ -z $1 ]] ; then
+                error "--with-hdf5 requires a path."
+            fi
+            HDF5_PREFIX="$1"
+            ;;
+        --)
+            shift
+            while [[ $# -gt 0 ]] ; do
+                ARGS+=("$1")
+                shift
+            done
+            break
+            ;;
+        *)
+            ARGS+=("$1")
+            ;;
+    esac
+    shift
+done
+set -- "${ARGS[@]}"
 
 
 while getopts "d:c:i:g:h" c ; do
