@@ -63,6 +63,7 @@ subroutine main()
    call minimize_tc_orb_angles()
   endif
   call print_energy_and_mos(good_angles)
+  call save_tc_mos_right_normalized
 
   write(json_unit,json_array_close_fmtx)
   call json_close

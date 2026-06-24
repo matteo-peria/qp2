@@ -183,36 +183,36 @@ END_PROVIDER
   integer                       :: i, j, p, q
   double precision, allocatable :: tmp(:,:)
 
-  !overlap_mo_r = 0.d0
-  !overlap_mo_l = 0.d0
-  !do i = 1, mo_num
-  !  do j = 1, mo_num
-  !    do p = 1, ao_num
-  !      do q = 1, ao_num
-  !        overlap_mo_r(j,i) += mo_r_coef_read(q,i) * mo_r_coef_read(p,j) * ao_overlap(q,p) 
-  !        overlap_mo_l(j,i) += mo_l_coef_read(q,i) * mo_l_coef_read(p,j) * ao_overlap(q,p)
-  !      enddo
-  !    enddo
-  !  enddo
-  !enddo
+   overlap_mo_r_read_read = 0.d0
+   overlap_mo_l_read_read = 0.d0
+   do i = 1, mo_num
+     do j = 1, mo_num
+       do p = 1, ao_num
+         do q = 1, ao_num
+           overlap_mo_r_read_read(j,i) += mo_r_coef_read(q,i) * mo_r_coef_read(p,j) * ao_overlap(q,p) 
+           overlap_mo_l_read_read(j,i) += mo_l_coef_read(q,i) * mo_l_coef_read(p,j) * ao_overlap(q,p)
+         enddo
+       enddo
+     enddo
+   enddo
 
   allocate( tmp(mo_num,ao_num) )
 
-  tmp = 0.d0
-  call dgemm( "T", "N", mo_num, ao_num, ao_num, 1.d0                                   & 
-            , mo_r_coef_read(1,1), size(mo_r_coef_read, 1), ao_overlap(1,1), size(ao_overlap, 1) &
-            , 0.d0, tmp(1,1), size(tmp, 1) )
-  call dgemm( "N", "N", mo_num, mo_num, ao_num, 1.d0                     & 
-            , tmp(1,1), size(tmp, 1), mo_r_coef_read(1,1), size(mo_r_coef_read, 1) &
-            , 0.d0, overlap_mo_r_read_read(1,1), size(overlap_mo_r, 1) )
+ !tmp = 0.d0
+ !call dgemm( "T", "N", mo_num, ao_num, ao_num, 1.d0                                   & 
+ !          , mo_r_coef_read(1,1), size(mo_r_coef_read, 1), ao_overlap(1,1), size(ao_overlap, 1) &
+ !          , 0.d0, tmp(1,1), size(tmp, 1) )
+ !call dgemm( "N", "N", mo_num, mo_num, ao_num, 1.d0                     & 
+ !          , tmp(1,1), size(tmp, 1), mo_r_coef_read(1,1), size(mo_r_coef_read, 1) &
+ !          , 0.d0, overlap_mo_r_read_read(1,1), size(overlap_mo_r, 1) )
 
-  tmp = 0.d0
-  call dgemm( "T", "N", mo_num, ao_num, ao_num, 1.d0                                   & 
-            , mo_l_coef_read(1,1), size(mo_l_coef_read, 1), ao_overlap(1,1), size(ao_overlap, 1) &
-            , 0.d0, tmp(1,1), size(tmp, 1) )
-  call dgemm( "N", "N", mo_num, mo_num, ao_num, 1.d0                     & 
-            , tmp(1,1), size(tmp, 1), mo_l_coef_read(1,1), size(mo_l_coef_read, 1) &
-            , 0.d0, overlap_mo_l_read_read(1,1), size(overlap_mo_l, 1) )
+ !tmp = 0.d0
+ !call dgemm( "T", "N", mo_num, ao_num, ao_num, 1.d0                                   & 
+ !          , mo_l_coef_read(1,1), size(mo_l_coef_read, 1), ao_overlap(1,1), size(ao_overlap, 1) &
+ !          , 0.d0, tmp(1,1), size(tmp, 1) )
+ !call dgemm( "N", "N", mo_num, mo_num, ao_num, 1.d0                     & 
+ !          , tmp(1,1), size(tmp, 1), mo_l_coef_read(1,1), size(mo_l_coef_read, 1) &
+ !          , 0.d0, overlap_mo_l_read_read(1,1), size(overlap_mo_l, 1) )
 
   deallocate(tmp)
 
