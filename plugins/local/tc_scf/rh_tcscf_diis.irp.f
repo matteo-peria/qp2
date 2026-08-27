@@ -89,7 +89,7 @@ subroutine rh_tcscf_diis()
     it += 1
     if(it > n_it_TCSCF_max) then
       print *, ' max of TCSCF iterations is reached ', n_it_TCSCF_max
-      stop
+      exit
     endif
 
     dim_DIIS = min(dim_DIIS+1, max_dim_DIIS_TCSCF)
@@ -257,7 +257,11 @@ subroutine rh_tcscf_diis()
 
   ! ---
 
-  print *, ' TCSCF DIIS converged !'
+  if(converged)then
+   print *, ' TCSCF DIIS converged !'
+  else
+   print*,'Warning, TCSCF DIIS did not converge ...'
+  endif
   !call print_energy_and_mos(good_angles)
   call write_time(6)
 
