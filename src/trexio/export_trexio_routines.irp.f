@@ -1,9 +1,14 @@
-subroutine export_trexio(update,full_path)
+subroutine export_trexio_subroutine(update,full_path)
   use trexio
   implicit none
-  BEGIN_DOC
-  !     Exports the wave function in TREXIO format
-  END_DOC
+   BEGIN_DOC
+   ! Writes the wave function and, per the export_*
+   ! providers, the basis, MOs, integrals and density
+   ! matrices to one TREXIO file per state, the first
+   ! named by trexio_filename. With update, existing
+   ! files are opened for update instead of rewritten;
+   ! full_path makes the path absolute.
+   END_DOC
 
   logical, intent(in)            :: update, full_path
   integer(trexio_t), allocatable :: f(:) ! TREXIO file handle
@@ -129,11 +134,15 @@ subroutine export_trexio(update,full_path)
 
   print *, 'Electrons'
 
-  rc = trexio_write_electron_up_num(f(1), elec_alpha_num)
-  call trexio_assert(rc, TREXIO_SUCCESS)
-
-  rc = trexio_write_electron_dn_num(f(1), elec_beta_num)
-  call trexio_assert(rc, TREXIO_SUCCESS)
+  ! TREXIO >= 2.6.0 validates every determinant written to a file against
+  ! that file's own electron_up_num/electron_dn_num attributes, so these
+  ! must be written to every state file, not just f(1).
+  do k=1,N_states
+    rc = trexio_write_electron_up_num(f(k), elec_alpha_num)
+    call trexio_assert(rc, TREXIO_SUCCESS)
+    rc = trexio_write_electron_dn_num(f(k), elec_beta_num)
+    call trexio_assert(rc, TREXIO_SUCCESS)
+  enddo
 
 
 ! Nuclei
@@ -296,7 +305,73 @@ subroutine export_trexio(update,full_path)
     call trexio_assert(rc, TREXIO_SUCCESS)
 
     allocate(factor(prim_num))
-    if (primitives_normalized) then
+    if (use_cgtos) then
+      ! cGTO AOs:  chi = poly sum_k c_k n_k [ g_k + g_k^* ] = poly sum_k c_k (2 n_k) exp(-a_k r^2) cos(b_k r^2 + phi_k)
+      ! with g_k = exp(-(a_k + i b_k) r^2 - i phi_k).  For phi_k = 0 or pi this is the TREXIO oscillating
+      ! Gaussian of kind "Cos2" with oscillation_arg = b_k and prim_factor = cos(phi_k) 2 n_k (n_k of the
+      ! first AO of the shell; the other Cartesian components are handled by ao_normalization).
+      ! Plane waves, other phases (e.g. sin-type functions, phi = -pi/2) and shells whose Cartesian
+      ! components differ in b or phi cannot be represented. The integrals are still exported, but the
+      ! basis is then tagged with a non-standard oscillation_kind, so that readers (QMCkl,
+      ! qp_import_trexio) refuse it instead of silently evaluating wrong AOs.
+      double precision, allocatable :: osc_arg(:)
+      integer :: s_prev, j_in_shell, l_first, l_ao, n_cart, m
+      double precision :: phi, phi_l
+      logical :: representable
+      ! plane waves are tested component by component below (not with use_pw,
+      ! which ignores |k|^2 <= 1e-15, still significant for diffuse primitives)
+      representable = .True.
+      allocate(osc_arg(prim_num))
+      s_prev = -1
+      j_in_shell = 0
+      do i = 1, prim_num
+        if (shell_index(i) /= s_prev) then
+          s_prev = shell_index(i)
+          j_in_shell = 0
+        endif
+        j_in_shell += 1
+        l_first = ao_first_of_shell(shell_index(i))
+        n_cart  = ((shell_ang_mom(shell_index(i))+1)*(shell_ang_mom(shell_index(i))+2))/2
+        osc_arg(i) = ao_expo_im(l_first,j_in_shell)
+        phi = ao_expo_phase(1,l_first,j_in_shell) + ao_expo_phase(2,l_first,j_in_shell) &
+            + ao_expo_phase(3,l_first,j_in_shell)
+        ! cos(b r^2 + phi) = cos(phi) cos(b r^2) only if sin(phi) = 0
+        if (dabs(dsin(phi)) > 1.d-12) representable = .False.
+        ! all the Cartesian components of the shell must share b and phi (one oscillation_arg per primitive)
+        do l_ao = l_first, l_first + n_cart - 1
+          phi_l = ao_expo_phase(1,l_ao,j_in_shell) + ao_expo_phase(2,l_ao,j_in_shell) &
+                + ao_expo_phase(3,l_ao,j_in_shell)
+          if (dabs(ao_expo_im(l_ao,j_in_shell) - osc_arg(i)) > 1.d-14 * max(1.d0, dabs(osc_arg(i)))) &
+            representable = .False.
+          if (dabs(phi_l - phi) > 1.d-12) representable = .False.
+          do m = 1, 3
+            if (ao_expo_pw(m,l_ao,j_in_shell) /= 0.d0) representable = .False.
+          enddo
+        enddo
+        ! ao_coef_norm_cgtos includes the primitive and (if ao_normalized) the contraction
+        ! normalization, whatever primitives_normalized is
+        if (ao_coef(l_first,j_in_shell) /= 0.d0) then
+          factor(i) = dcos(phi) * 2.d0 * ao_coef_norm_cgtos(l_first,j_in_shell) / ao_coef(l_first,j_in_shell)
+        else
+          factor(i) = dcos(phi) * 2.d0
+        endif
+      enddo
+      if (representable) then
+        rc = trexio_write_basis_oscillation_kind(f(1), 'Cos2', 4)
+      else
+        print *, '**********************************************************************'
+        print *, 'Warning: these cGTOs (plane waves, phases other than 0 or pi, e.g.'
+        print *, 'sin-type functions, or shells whose components differ in b or phi)'
+        print *, 'cannot be written as TREXIO "Cos2" oscillating Gaussians. The integrals'
+        print *, 'are exported, the basis is tagged oscillation_kind = "QP2_cGTO_unsupported".'
+        print *, '**********************************************************************'
+        rc = trexio_write_basis_oscillation_kind(f(1), 'QP2_cGTO_unsupported', 20)
+      endif
+      call trexio_assert(rc, TREXIO_SUCCESS)
+      rc = trexio_write_basis_oscillation_arg(f(1), osc_arg)
+      call trexio_assert(rc, TREXIO_SUCCESS)
+      deallocate(osc_arg)
+    else if (primitives_normalized) then
       factor(1:prim_num) = prim_normalization_factor(1:prim_num)
     else
       factor(1:prim_num) = 1.d0
@@ -331,7 +406,17 @@ subroutine export_trexio(update,full_path)
 
 !      if (trim(basis_type) /= 'Slater') then
 
-        if (ezfio_convention >= 20250211) then
+        if (use_cgtos) then
+          ! ratio of the cGTO primitive normalizations of a Cartesian component to the first
+          ! component of the shell (independent of the exponent, so taken on the first primitive)
+          allocate(factor(ao_num))
+          do i=1,ao_num
+            l = ao_first_of_shell(ao_shell(i))
+            factor(i) = (ao_coef_norm_cgtos(i,1)+tiny(1.d0))/(ao_coef_norm_cgtos(l,1)+tiny(1.d0))
+          enddo
+          rc = trexio_write_ao_normalization(f(1), factor)
+          deallocate(factor)
+        else if (ezfio_convention >= 20250211) then
           rc = trexio_write_ao_normalization(f(1), ao_coef_normalization_factor)
         else
 

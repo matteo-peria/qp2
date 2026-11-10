@@ -25,6 +25,7 @@
    users_guide/interfaces
    users_guide/excited_states
    users_guide/natural_orbitals
+   users_guide/symmetry
    users_guide/printing
    users_guide/plugins
    users_guide/index
@@ -41,7 +42,6 @@
    programmers_guide/plugins
    programmers_guide/plugins_tuto_intro
    programmers_guide/plugins_tuto_I
-   programmers_guide/plugins_tuto_II
    programmers_guide/new_ks
    programmers_guide/index
 

@@ -79,11 +79,11 @@ subroutine orb_range_2_rdm_state_av_openmp_work_$N_int(big_array,dim1,norb,list_
    use omp_lib
    implicit none
    BEGIN_DOC
-   ! Computes the two rdm for the N_st vectors |u_t>
+   ! Computes the two rdm for the N_st vectors \|u_t>
    ! if ispin == 1 :: alpha/alpha 2rdm
-   !          == 2 :: beta /beta  2rdm
-   !          == 3 :: alpha/beta  2rdm
-   !          == 4 :: spin traced 2rdm :: aa + bb + 0.5 (ab + ba))
+   ! if ispin == 2 :: beta /beta  2rdm
+   ! if ispin == 3 :: alpha/beta  2rdm
+   ! if ispin == 4 :: spin traced 2rdm :: aa + bb + 0.5 (ab + ba))
    ! The 2rdm will be computed only on the list of orbitals list_orb, which contains norb
    ! In any cases, the state average weights will be used with an array state_weights
    ! Default should be 1,N_det,0,1 for istart,iend,ishift,istep
@@ -560,6 +560,12 @@ end
 subroutine update_keys_values(keys,values,nkeys,dim1,big_array,lock_2rdm)
  use omp_lib
  implicit none
+ BEGIN_DOC
+ ! Adds the buffered contributions to the two-rdm big_array:
+ ! keys(1:4,i) gives the orbital indices (h1,h2,p1,p2) of
+ ! the element, values(i) is added to big_array(h1,h2,p1,p2).
+ ! The updates are protected by the OpenMP lock lock_2rdm.
+ END_DOC
  integer, intent(in) :: nkeys,dim1
  integer, intent(in) :: keys(4,nkeys)
  double precision, intent(in) :: values(nkeys)

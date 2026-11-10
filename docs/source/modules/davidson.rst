@@ -28,32 +28,10 @@ The important providers for that module are:
  
  
  
-EZFIO parameters 
----------------- 
- 
-.. option:: csf_based
- 
-    If |true|, use the CSF-based algorithm
- 
-    Default: False
- 
-.. option:: only_expected_s2
- 
-    If |true|, use filter out all vectors with bad |S^2| values
- 
-    Default: True
- 
-.. option:: without_diagonal
- 
-    If |true|, don't use denominator
- 
-    Default: False
- 
- 
 Providers 
 --------- 
  
-.. c:var:: ci_eigenvectors
+.. c:var:: double ci_eigenvectors
 
 
     File : :file:`davidson/diagonalize_ci.irp.f`
@@ -72,20 +50,27 @@ Providers
     .. hlist::
        :columns: 3
 
+       * :c:data:`all_mo_integrals`
        * :c:data:`csf_based`
        * :c:data:`diag_algorithm`
        * :c:data:`distributed_davidson`
        * :c:data:`dressing_column_h`
        * :c:data:`expected_s2`
        * :c:data:`h_matrix_all_dets`
-       * :c:data:`mo_two_e_integrals_in_map`
+       * :c:data:`mpi_master`
+       * :c:data:`n_csf`
        * :c:data:`n_det`
        * :c:data:`n_int`
        * :c:data:`n_states`
        * :c:data:`n_states_diag`
-       * :c:data:`nsomomax`
        * :c:data:`nthreads_davidson`
        * :c:data:`only_expected_s2`
+       * :c:data:`pg_det_irrep`
+       * :c:data:`pg_irrep_allowed`
+       * :c:data:`pg_irrep_filter`
+       * :c:data:`pg_label_ierr`
+       * :c:data:`pg_n_col`
+       * :c:data:`pg_thresh`
        * :c:data:`psi_coef`
        * :c:data:`psi_det`
        * :c:data:`s2_eig`
@@ -101,7 +86,7 @@ Providers
        * :c:data:`ci_energy`
 
  
-.. c:var:: ci_electronic_energy
+.. c:var:: double ci_electronic_energy
 
 
     File : :file:`davidson/diagonalize_ci.irp.f`
@@ -120,20 +105,27 @@ Providers
     .. hlist::
        :columns: 3
 
+       * :c:data:`all_mo_integrals`
        * :c:data:`csf_based`
        * :c:data:`diag_algorithm`
        * :c:data:`distributed_davidson`
        * :c:data:`dressing_column_h`
        * :c:data:`expected_s2`
        * :c:data:`h_matrix_all_dets`
-       * :c:data:`mo_two_e_integrals_in_map`
+       * :c:data:`mpi_master`
+       * :c:data:`n_csf`
        * :c:data:`n_det`
        * :c:data:`n_int`
        * :c:data:`n_states`
        * :c:data:`n_states_diag`
-       * :c:data:`nsomomax`
        * :c:data:`nthreads_davidson`
        * :c:data:`only_expected_s2`
+       * :c:data:`pg_det_irrep`
+       * :c:data:`pg_irrep_allowed`
+       * :c:data:`pg_irrep_filter`
+       * :c:data:`pg_label_ierr`
+       * :c:data:`pg_n_col`
+       * :c:data:`pg_thresh`
        * :c:data:`psi_coef`
        * :c:data:`psi_det`
        * :c:data:`s2_eig`
@@ -149,7 +141,7 @@ Providers
        * :c:data:`ci_energy`
 
  
-.. c:var:: ci_energy
+.. c:var:: double ci_energy
 
 
     File : :file:`davidson/diagonalize_ci.irp.f`
@@ -177,7 +169,7 @@ Providers
 
 
  
-.. c:var:: ci_s2
+.. c:var:: double ci_s2
 
 
     File : :file:`davidson/diagonalize_ci.irp.f`
@@ -196,20 +188,27 @@ Providers
     .. hlist::
        :columns: 3
 
+       * :c:data:`all_mo_integrals`
        * :c:data:`csf_based`
        * :c:data:`diag_algorithm`
        * :c:data:`distributed_davidson`
        * :c:data:`dressing_column_h`
        * :c:data:`expected_s2`
        * :c:data:`h_matrix_all_dets`
-       * :c:data:`mo_two_e_integrals_in_map`
+       * :c:data:`mpi_master`
+       * :c:data:`n_csf`
        * :c:data:`n_det`
        * :c:data:`n_int`
        * :c:data:`n_states`
        * :c:data:`n_states_diag`
-       * :c:data:`nsomomax`
        * :c:data:`nthreads_davidson`
        * :c:data:`only_expected_s2`
+       * :c:data:`pg_det_irrep`
+       * :c:data:`pg_irrep_allowed`
+       * :c:data:`pg_irrep_filter`
+       * :c:data:`pg_label_ierr`
+       * :c:data:`pg_n_col`
+       * :c:data:`pg_thresh`
        * :c:data:`psi_coef`
        * :c:data:`psi_det`
        * :c:data:`s2_eig`
@@ -225,7 +224,7 @@ Providers
        * :c:data:`ci_energy`
 
  
-.. c:var:: diag_algorithm
+.. c:var:: char diag_algorithm
 
 
     File : :file:`davidson/diagonalization_hs2_dressed.irp.f`
@@ -254,7 +253,7 @@ Providers
        * :c:data:`ci_electronic_energy`
 
  
-.. c:var:: dressed_column_idx
+.. c:var:: int dressed_column_idx
 
 
     File : :file:`davidson/diagonalization_hs2_dressed.irp.f`
@@ -277,7 +276,7 @@ Providers
 
 
  
-.. c:var:: overlap_states
+.. c:var:: double overlap_states
 
 
     File : :file:`davidson/overlap_states.irp.f`
@@ -304,7 +303,7 @@ Providers
 
 
  
-.. c:var:: overlap_states_inv
+.. c:var:: double overlap_states_inv
 
 
     File : :file:`davidson/overlap_states.irp.f`
@@ -331,7 +330,7 @@ Providers
 
 
  
-.. c:var:: psi_energy
+.. c:var:: double psi_energy
 
 
     File : :file:`davidson/u0_hs2_u0.irp.f`
@@ -370,10 +369,9 @@ Providers
 
        * :c:data:`ci_energy_no_diag`
        * :c:data:`psi_energy_with_nucl_rep`
-       * :c:data:`pt2_e0_denominator`
 
  
-.. c:var:: psi_energy_two_e
+.. c:var:: double psi_energy_two_e
 
 
     File : :file:`davidson/u0_wee_u0.irp.f`
@@ -399,7 +397,7 @@ Providers
 
 
  
-.. c:var:: psi_energy_two_e_trans
+.. c:var:: double psi_energy_two_e_trans
 
 
     File : :file:`davidson/u0_wee_u0.irp.f`
@@ -409,27 +407,26 @@ Providers
         double precision, allocatable	:: psi_energy_two_e_trans	(N_states,N_states)
 
 
-    psi_energy_two_e_trans(istate,jstate) = <Psi_istate|W_ee |Psi_jstate>
+    psi_energy_two_e_trans(istate,jstate) = <Psi_istate\|W_ee \|Psi_jstate>
 
     Needs:
 
     .. hlist::
        :columns: 3
 
-       * :c:data:`big_array_coulomb_integrals`
+       * :c:data:`all_mo_integrals`
        * :c:data:`big_array_coulomb_integrals`
        * :c:data:`mo_integrals_map`
-       * :c:data:`mo_two_e_integrals_in_map`
        * :c:data:`n_det`
        * :c:data:`n_int`
        * :c:data:`n_states`
        * :c:data:`psi_coef`
        * :c:data:`psi_det`
-       * :c:data:`ref_bitmask_energy`
+       * :c:data:`ref_bitmask_two_e_energy`
 
 
  
-.. c:var:: psi_energy_with_nucl_rep
+.. c:var:: double psi_energy_with_nucl_rep
 
 
     File : :file:`davidson/u0_hs2_u0.irp.f`
@@ -452,7 +449,7 @@ Providers
 
 
  
-.. c:var:: psi_s2
+.. c:var:: double psi_s2
 
 
     File : :file:`davidson/u0_hs2_u0.irp.f`
@@ -491,14 +488,13 @@ Providers
 
        * :c:data:`ci_energy_no_diag`
        * :c:data:`psi_energy_with_nucl_rep`
-       * :c:data:`pt2_e0_denominator`
 
  
  
 Subroutines / functions 
 ----------------------- 
  
-.. c:function:: davidson_collector:
+.. c:function:: void davidson_collector(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`
@@ -532,7 +528,7 @@ Subroutines / functions
        * :c:func:`davidson_pull_results`
 
  
-.. c:function:: davidson_csf_collector:
+.. c:function:: void davidson_csf_collector(void)
 
 
     File : :file:`davidson/davidson_parallel_csf.irp.f`
@@ -559,7 +555,7 @@ Subroutines / functions
        * :c:func:`davidson_csf_pull_results`
 
  
-.. c:function:: davidson_csf_pull_results:
+.. c:function:: void davidson_csf_pull_results(void)
 
 
     File : :file:`davidson/davidson_parallel_csf.irp.f`
@@ -587,7 +583,7 @@ Subroutines / functions
        * :c:func:`davidson_csf_collector`
 
  
-.. c:function:: davidson_csf_push_results:
+.. c:function:: void davidson_csf_push_results(void)
 
 
     File : :file:`davidson/davidson_parallel_csf.irp.f`
@@ -608,7 +604,7 @@ Subroutines / functions
        * :c:data:`n_states_diag`
 
  
-.. c:function:: davidson_csf_push_results_async_send:
+.. c:function:: void davidson_csf_push_results_async_send(void)
 
 
     File : :file:`davidson/davidson_parallel_csf.irp.f`
@@ -636,7 +632,7 @@ Subroutines / functions
        * :c:func:`davidson_csf_slave_work`
 
  
-.. c:function:: davidson_csf_run_slave:
+.. c:function:: void davidson_csf_run_slave(void)
 
 
     File : :file:`davidson/davidson_parallel_csf.irp.f`
@@ -675,7 +671,7 @@ Subroutines / functions
        * :c:func:`sleep`
 
  
-.. c:function:: davidson_csf_slave_inproc:
+.. c:function:: void davidson_csf_slave_inproc(void)
 
 
     File : :file:`davidson/davidson_parallel_csf.irp.f`
@@ -685,6 +681,11 @@ Subroutines / functions
         subroutine davidson_csf_slave_inproc(i)
 
 
+    In-process variant of the CSF Davidson slave: starts the
+    worker in the current process with davidson_csf_run_slave(1,i).
+    H_u_0_nstates_zmq in this file starts it as an OpenMP thread.
+    i is forwarded to davidson_csf_run_slave, which does not use
+    iproc.
 
     Calls:
 
@@ -694,7 +695,7 @@ Subroutines / functions
        * :c:func:`davidson_csf_run_slave`
 
  
-.. c:function:: davidson_csf_slave_tcp:
+.. c:function:: void davidson_csf_slave_tcp(void)
 
 
     File : :file:`davidson/davidson_parallel_csf.irp.f`
@@ -704,6 +705,10 @@ Subroutines / functions
         subroutine davidson_csf_slave_tcp(i)
 
 
+    TCP variant of the CSF Davidson slave: starts the worker with
+    davidson_csf_run_slave(0,i); the in-process variant passes 1
+    instead of 0. i is forwarded to davidson_csf_run_slave, which
+    does not use iproc.
 
     Calls:
 
@@ -713,7 +718,7 @@ Subroutines / functions
        * :c:func:`davidson_csf_run_slave`
 
  
-.. c:function:: davidson_csf_slave_work:
+.. c:function:: void davidson_csf_slave_work(void)
 
 
     File : :file:`davidson/davidson_parallel_csf.irp.f`
@@ -723,6 +728,12 @@ Subroutines / functions
         subroutine davidson_csf_slave_work(zmq_to_qp_run_socket, zmq_socket_push, N_st, sze, worker_id)
 
 
+    Worker loop of the CSF Davidson slave. Fetches the wavefunction
+    u_t from the qp_run scheduler, then takes tasks (imin, imax,
+    ishift, istep) from the task server and calls
+    H_u_0_nstates_openmp_work to compute $H | u_t \rangle$ on
+    determinant columns imin+ishift to imax, step istep, pushing
+    the results to the master.
 
     Needs:
 
@@ -759,7 +770,7 @@ Subroutines / functions
        * :c:func:`h_u_0_nstates_openmp_work`
 
  
-.. c:function:: davidson_diag_csf_hjj:
+.. c:function:: void davidson_diag_csf_hjj(void)
 
 
     File : :file:`davidson/diagonalization_hcsf_dressed.irp.f`
@@ -786,6 +797,7 @@ Subroutines / functions
     
     N_st_diag_in : Number of states in which H is diagonalized. Assumed > sze
     
+    Initial guess vectors are not necessarily orthonormal
 
     Needs:
 
@@ -798,7 +810,7 @@ Subroutines / functions
        * :c:data:`dressed_column_idx`
        * :c:data:`dressing_column_h`
        * :c:data:`expected_s2`
-       * :c:data:`ezfio_work_dir`
+       * :c:data:`n_csf`
        * :c:data:`n_det`
        * :c:data:`n_int`
        * :c:data:`nproc`
@@ -814,7 +826,6 @@ Subroutines / functions
        * :c:data:`threshold_davidson`
        * :c:data:`threshold_davidson_from_pt2`
        * :c:data:`threshold_davidson_pt2`
-       * :c:data:`without_diagonal`
 
     Called by:
 
@@ -828,18 +839,19 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`c_f_pointer`
        * :c:func:`check_mem`
        * :c:func:`convertwffromcsftodet`
        * :c:func:`convertwffromdettocsf`
        * :c:func:`dgemm`
+       * :c:func:`dswap`
        * :c:func:`dsygv`
        * :c:func:`h_u_0_nstates_openmp`
        * :c:func:`h_u_0_nstates_zmq`
-       * :c:func:`mmap`
-       * :c:func:`munmap`
+       * :c:func:`mmap_create_d`
+       * :c:func:`mmap_destroy`
        * :c:func:`normalize`
        * :c:func:`nullify_small_elements`
+       * :c:func:`qp_bug`
        * :c:func:`random_number`
        * :c:func:`resident_memory`
        * :c:func:`write_double`
@@ -902,7 +914,7 @@ Subroutines / functions
        * :c:data:`nthreads_davidson`
 
  
-.. c:function:: davidson_diag_h_csf:
+.. c:function:: void davidson_diag_h_csf(void)
 
 
     File : :file:`davidson/diagonalization_hcsf_dressed.irp.f`
@@ -925,14 +937,15 @@ Subroutines / functions
     
     N_st : Number of eigenstates
     
+    Initial guess vectors are not necessarily orthonormal
 
     Needs:
 
     .. hlist::
        :columns: 3
 
+       * :c:data:`all_mo_integrals`
        * :c:data:`dressing_column_h`
-       * :c:data:`mo_two_e_integrals_in_map`
 
     Called by:
 
@@ -1049,7 +1062,7 @@ Subroutines / functions
        * :c:data:`nthreads_davidson`
 
  
-.. c:function:: davidson_diag_hjj_sjj:
+.. c:function:: void davidson_diag_hjj_sjj(void)
 
 
     File : :file:`davidson/diagonalization_hs2_dressed.irp.f`
@@ -1097,6 +1110,7 @@ Subroutines / functions
        * :c:data:`nthreads_davidson`
        * :c:data:`nuclear_repulsion`
        * :c:data:`only_expected_s2`
+       * :c:data:`pg_irrep_filter`
        * :c:data:`psi_bilinear_matrix_values`
        * :c:data:`psi_bilinear_matrix_order_reverse`
        * :c:data:`psi_coef`
@@ -1131,6 +1145,10 @@ Subroutines / functions
        * :c:func:`mmap_destroy`
        * :c:func:`normalize`
        * :c:func:`nullify_small_elements`
+       * :c:func:`pg_det_state_labels`
+       * :c:func:`pg_state_apply`
+       * :c:func:`pg_state_warn_filtered`
+       * :c:func:`qp_bug`
        * :c:func:`random_number`
        * :c:func:`resident_memory`
        * :c:func:`sgemm`
@@ -1146,7 +1164,7 @@ Subroutines / functions
        * :c:data:`nthreads_davidson`
 
  
-.. c:function:: davidson_diag_hs2:
+.. c:function:: void davidson_diag_hs2(void)
 
 
     File : :file:`davidson/diagonalization_hs2_dressed.irp.f`
@@ -1176,8 +1194,8 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
+       * :c:data:`all_mo_integrals`
        * :c:data:`dressing_column_h`
-       * :c:data:`mo_two_e_integrals_in_map`
 
     Called by:
 
@@ -1201,7 +1219,7 @@ Subroutines / functions
        * :c:data:`nthreads_davidson`
 
  
-.. c:function:: davidson_diag_nonsym_h:
+.. c:function:: void davidson_diag_nonsym_h(void)
 
 
     File : :file:`davidson/diagonalization_nonsym_h_dressed.irp.f`
@@ -1232,8 +1250,8 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
+       * :c:data:`all_mo_integrals`
        * :c:data:`dressing_column_h`
-       * :c:data:`mo_two_e_integrals_in_map`
        * :c:data:`overlap_states`
 
     Calls:
@@ -1251,7 +1269,7 @@ Subroutines / functions
        * :c:data:`nthreads_davidson`
 
  
-.. c:function:: davidson_diag_nonsym_hjj:
+.. c:function:: void davidson_diag_nonsym_hjj(void)
 
 
     File : :file:`davidson/diagonalization_nonsym_h_dressed.irp.f`
@@ -1346,7 +1364,7 @@ Subroutines / functions
        * :c:data:`nthreads_davidson`
 
  
-.. c:function:: davidson_nos2_collector:
+.. c:function:: void davidson_nos2_collector(void)
 
 
     File : :file:`davidson/davidson_parallel_nos2.irp.f`
@@ -1380,7 +1398,7 @@ Subroutines / functions
        * :c:func:`davidson_nos2_pull_results`
 
  
-.. c:function:: davidson_nos2_pull_results:
+.. c:function:: void davidson_nos2_pull_results(void)
 
 
     File : :file:`davidson/davidson_parallel_nos2.irp.f`
@@ -1408,7 +1426,7 @@ Subroutines / functions
        * :c:func:`davidson_nos2_collector`
 
  
-.. c:function:: davidson_nos2_push_results:
+.. c:function:: void davidson_nos2_push_results(void)
 
 
     File : :file:`davidson/davidson_parallel_nos2.irp.f`
@@ -1429,7 +1447,7 @@ Subroutines / functions
        * :c:data:`n_states_diag`
 
  
-.. c:function:: davidson_nos2_push_results_async_send:
+.. c:function:: void davidson_nos2_push_results_async_send(void)
 
 
     File : :file:`davidson/davidson_parallel_nos2.irp.f`
@@ -1457,7 +1475,7 @@ Subroutines / functions
        * :c:func:`davidson_nos2_slave_work`
 
  
-.. c:function:: davidson_nos2_run_slave:
+.. c:function:: void davidson_nos2_run_slave(void)
 
 
     File : :file:`davidson/davidson_parallel_nos2.irp.f`
@@ -1496,7 +1514,7 @@ Subroutines / functions
        * :c:func:`sleep`
 
  
-.. c:function:: davidson_nos2_slave_inproc:
+.. c:function:: void davidson_nos2_slave_inproc(void)
 
 
     File : :file:`davidson/davidson_parallel_nos2.irp.f`
@@ -1506,6 +1524,11 @@ Subroutines / functions
         subroutine davidson_nos2_slave_inproc(i)
 
 
+    In-process variant of the Davidson slave without the S^2
+    operator: starts the worker in the current process with
+    davidson_nos2_run_slave(1,i). H_u_0_nstates_zmq in this file
+    starts it as an OpenMP thread. i is forwarded to
+    davidson_nos2_run_slave, which does not use iproc.
 
     Called by:
 
@@ -1522,7 +1545,7 @@ Subroutines / functions
        * :c:func:`davidson_nos2_run_slave`
 
  
-.. c:function:: davidson_nos2_slave_tcp:
+.. c:function:: void davidson_nos2_slave_tcp(void)
 
 
     File : :file:`davidson/davidson_parallel_nos2.irp.f`
@@ -1532,6 +1555,10 @@ Subroutines / functions
         subroutine davidson_nos2_slave_tcp(i)
 
 
+    TCP variant of the Davidson slave without the S^2 operator:
+    starts the worker with davidson_nos2_run_slave(0,i); the
+    in-process variant passes 1 instead of 0. i is forwarded to
+    davidson_nos2_run_slave, which does not use iproc.
 
     Calls:
 
@@ -1541,7 +1568,7 @@ Subroutines / functions
        * :c:func:`davidson_nos2_run_slave`
 
  
-.. c:function:: davidson_nos2_slave_work:
+.. c:function:: void davidson_nos2_slave_work(void)
 
 
     File : :file:`davidson/davidson_parallel_nos2.irp.f`
@@ -1551,6 +1578,12 @@ Subroutines / functions
         subroutine davidson_nos2_slave_work(zmq_to_qp_run_socket, zmq_socket_push, N_st, sze, worker_id)
 
 
+    Worker loop of the Davidson slave without the S^2 operator.
+    Fetches the wavefunction u_t from the qp_run scheduler, then
+    takes tasks (imin, imax, ishift, istep) from the task server
+    and calls H_u_0_nstates_openmp_work, which computes
+    $H | u_t \rangle$ on determinant columns imin+ishift to imax,
+    step istep, pushing the results to the master.
 
     Needs:
 
@@ -1587,7 +1620,7 @@ Subroutines / functions
        * :c:func:`h_u_0_nstates_openmp_work`
 
  
-.. c:function:: davidson_pull_results:
+.. c:function:: void davidson_pull_results(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`
@@ -1615,7 +1648,7 @@ Subroutines / functions
        * :c:func:`davidson_collector`
 
  
-.. c:function:: davidson_push_results:
+.. c:function:: void davidson_push_results(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`
@@ -1636,7 +1669,7 @@ Subroutines / functions
        * :c:data:`n_states_diag`
 
  
-.. c:function:: davidson_push_results_async_recv:
+.. c:function:: void davidson_push_results_async_recv(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`
@@ -1658,7 +1691,7 @@ Subroutines / functions
        * :c:func:`davidson_slave_work`
 
  
-.. c:function:: davidson_push_results_async_send:
+.. c:function:: void davidson_push_results_async_send(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`
@@ -1686,7 +1719,7 @@ Subroutines / functions
        * :c:func:`davidson_slave_work`
 
  
-.. c:function:: davidson_run_slave:
+.. c:function:: void davidson_run_slave(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`
@@ -1725,23 +1758,19 @@ Subroutines / functions
        * :c:func:`sleep`
 
  
-.. c:function:: davidson_slave_inproc:
+.. c:function:: void davidson_slave_inproc(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`
 
     .. code:: fortran
 
-        subroutine davidson_slave_inproc(i)
+        subroutine davidson_slave_inproc()
 
 
-
-    Called by:
-
-    .. hlist::
-       :columns: 3
-
-       * :c:func:`h_s2_u_0_nstates_zmq`
+    In-process variant of the Davidson slave: starts the worker
+    in the current process with davidson_run_slave(1,1).
+    H_S2_u_0_nstates_zmq in this file starts it via pthread_create.
 
     Calls:
 
@@ -1751,7 +1780,7 @@ Subroutines / functions
        * :c:func:`davidson_run_slave`
 
  
-.. c:function:: davidson_slave_tcp:
+.. c:function:: void davidson_slave_tcp(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`
@@ -1761,13 +1790,11 @@ Subroutines / functions
         subroutine davidson_slave_tcp(i)
 
 
-
-    Called by:
-
-    .. hlist::
-       :columns: 3
-
-       * :c:func:`run_slave_main`
+    TCP variant of the Davidson slave: starts the worker with
+    davidson_run_slave(0,i); the in-process variant passes 1
+    instead of 0. Runs in a slave process: run_slave_main in
+    cipsi_utils calls it when the ZMQ state is 'davidson'. i is
+    forwarded to davidson_run_slave, which does not use iproc.
 
     Calls:
 
@@ -1777,7 +1804,7 @@ Subroutines / functions
        * :c:func:`davidson_run_slave`
 
  
-.. c:function:: davidson_slave_work:
+.. c:function:: void davidson_slave_work(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`
@@ -1787,6 +1814,12 @@ Subroutines / functions
         subroutine davidson_slave_work(zmq_to_qp_run_socket, zmq_socket_push, N_st, sze, worker_id)
 
 
+    Worker loop of the Davidson slave. Fetches the wavefunction
+    u_t from the qp_run scheduler, then takes tasks (imin, imax,
+    ishift, istep) from the task server and calls
+    H_S2_u_0_nstates_openmp_work to compute $H | u_t \rangle$ and
+    $S^2 | u_t \rangle$ on determinant columns imin+ishift to
+    imax, step istep, pushing the results to the master.
 
     Needs:
 
@@ -1825,7 +1858,7 @@ Subroutines / functions
        * :c:func:`unlock_io`
 
  
-.. c:function:: diagonalize_ci:
+.. c:function:: void diagonalize_ci(void)
 
 
     File : :file:`davidson/diagonalize_ci.irp.f`
@@ -1854,17 +1887,6 @@ Subroutines / functions
        * :c:data:`psi_energy`
        * :c:data:`psi_energy`
 
-    Called by:
-
-    .. hlist::
-       :columns: 3
-
-       * :c:func:`remove_small_contributions`
-       * :c:func:`run_cipsi`
-       * :c:func:`run_orb_opt_trust_v2`
-       * :c:func:`run_stochastic_cipsi`
-       * :c:func:`update_parameters`
-
     Touches:
 
     .. hlist::
@@ -1879,7 +1901,7 @@ Subroutines / functions
        * :c:data:`psi_energy`
 
  
-.. c:function:: h_s2_u_0_nstates_openmp:
+.. c:function:: void h_s2_u_0_nstates_openmp(void)
 
 
     File : :file:`davidson/u0_hs2_u0.irp.f`
@@ -1922,7 +1944,7 @@ Subroutines / functions
        * :c:func:`h_s2_u_0_nstates_openmp_work`
 
  
-.. c:function:: h_s2_u_0_nstates_openmp_work:
+.. c:function:: void h_s2_u_0_nstates_openmp_work(void)
 
 
     File : :file:`davidson/u0_hs2_u0.irp.f`
@@ -1941,6 +1963,7 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
+       * :c:data:`all_mo_integrals`
        * :c:data:`n_det`
        * :c:data:`n_int`
        * :c:data:`ref_bitmask_energy`
@@ -1965,10 +1988,10 @@ Subroutines / functions
        * :c:func:`h_s2_u_0_nstates_openmp_work_n_int`
 
  
-.. c:function:: h_s2_u_0_nstates_openmp_work_1:
+.. c:function:: void h_s2_u_0_nstates_openmp_work_1(void)
 
 
-    File : :file:`davidson/u0_hs2_u0.irp.f_template_807`
+    File : :file:`davidson/u0_hs2_u0.irp.f_template_1554`
 
     .. code:: fortran
 
@@ -1984,6 +2007,7 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
+       * :c:data:`do_mo_cholesky`
        * :c:data:`n_det`
        * :c:data:`n_int`
        * :c:data:`nthreads_davidson`
@@ -2011,18 +2035,75 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_1`
-       * :c:func:`get_all_spin_singles_and_doubles_1`
-       * :c:func:`get_s2`
-       * :c:func:`i_h_j_double_alpha_beta`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
+       * :c:func:`h_s2_u_0_nstates_openmp_work_1_cholesky`
+       * :c:func:`i_h_j_double_alpha_beta_s2`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_h_j_single_spin`
 
  
-.. c:function:: h_s2_u_0_nstates_openmp_work_2:
+.. c:function:: void h_s2_u_0_nstates_openmp_work_1_cholesky(void)
 
 
-    File : :file:`davidson/u0_hs2_u0.irp.f_template_807`
+    File : :file:`davidson/u0_hs2_u0.irp.f_template_1554`
+
+    .. code:: fortran
+
+        subroutine H_S2_u_0_nstates_openmp_work_1_cholesky(v_t,s_t,u_t,N_st,sze,istart,iend,ishift,istep)
+
+
+    Computes $v_t = H | u_t \rangle$ and $s_t = S^2 | u_t\rangle$
+    
+    Default should be 1,N_det,0,1
+
+    Needs:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:data:`mo_integrals_map`
+       * :c:data:`mo_num`
+       * :c:data:`n_det`
+       * :c:data:`n_int`
+       * :c:data:`nthreads_davidson`
+       * :c:data:`psi_bilinear_matrix_columns_loc`
+       * :c:data:`psi_bilinear_matrix_order_transp_reverse`
+       * :c:data:`psi_bilinear_matrix_transp_rows_loc`
+       * :c:data:`psi_bilinear_matrix_transp_values`
+       * :c:data:`psi_bilinear_matrix_values`
+       * :c:data:`psi_det_alpha_unique`
+       * :c:data:`psi_det_beta_unique`
+       * :c:data:`singles_alpha_csc`
+       * :c:data:`singles_alpha_csc_idx`
+       * :c:data:`singles_beta_csc`
+       * :c:data:`singles_beta_csc_idx`
+
+    Called by:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:func:`h_s2_u_0_nstates_openmp_work_1`
+
+    Calls:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:func:`bitstring_to_list`
+       * :c:func:`get_all_spin_doubles`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_double_excitation_spin`
+       * :c:func:`get_mo_two_e_integrals_ij`
+       * :c:func:`get_single_excitation_spin`
+       * :c:func:`i_h_j_single_spin`
+
+ 
+.. c:function:: void h_s2_u_0_nstates_openmp_work_2(void)
+
+
+    File : :file:`davidson/u0_hs2_u0.irp.f_template_1554`
 
     .. code:: fortran
 
@@ -2038,6 +2119,7 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
+       * :c:data:`do_mo_cholesky`
        * :c:data:`n_det`
        * :c:data:`n_int`
        * :c:data:`nthreads_davidson`
@@ -2065,18 +2147,75 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_2`
-       * :c:func:`get_all_spin_singles_and_doubles_2`
-       * :c:func:`get_s2`
-       * :c:func:`i_h_j_double_alpha_beta`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
+       * :c:func:`h_s2_u_0_nstates_openmp_work_2_cholesky`
+       * :c:func:`i_h_j_double_alpha_beta_s2`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_h_j_single_spin`
 
  
-.. c:function:: h_s2_u_0_nstates_openmp_work_3:
+.. c:function:: void h_s2_u_0_nstates_openmp_work_2_cholesky(void)
 
 
-    File : :file:`davidson/u0_hs2_u0.irp.f_template_807`
+    File : :file:`davidson/u0_hs2_u0.irp.f_template_1554`
+
+    .. code:: fortran
+
+        subroutine H_S2_u_0_nstates_openmp_work_2_cholesky(v_t,s_t,u_t,N_st,sze,istart,iend,ishift,istep)
+
+
+    Computes $v_t = H | u_t \rangle$ and $s_t = S^2 | u_t\rangle$
+    
+    Default should be 1,N_det,0,1
+
+    Needs:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:data:`mo_integrals_map`
+       * :c:data:`mo_num`
+       * :c:data:`n_det`
+       * :c:data:`n_int`
+       * :c:data:`nthreads_davidson`
+       * :c:data:`psi_bilinear_matrix_columns_loc`
+       * :c:data:`psi_bilinear_matrix_order_transp_reverse`
+       * :c:data:`psi_bilinear_matrix_transp_rows_loc`
+       * :c:data:`psi_bilinear_matrix_transp_values`
+       * :c:data:`psi_bilinear_matrix_values`
+       * :c:data:`psi_det_alpha_unique`
+       * :c:data:`psi_det_beta_unique`
+       * :c:data:`singles_alpha_csc`
+       * :c:data:`singles_alpha_csc_idx`
+       * :c:data:`singles_beta_csc`
+       * :c:data:`singles_beta_csc_idx`
+
+    Called by:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:func:`h_s2_u_0_nstates_openmp_work_2`
+
+    Calls:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:func:`bitstring_to_list`
+       * :c:func:`get_all_spin_doubles`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_double_excitation_spin`
+       * :c:func:`get_mo_two_e_integrals_ij`
+       * :c:func:`get_single_excitation_spin`
+       * :c:func:`i_h_j_single_spin`
+
+ 
+.. c:function:: void h_s2_u_0_nstates_openmp_work_3(void)
+
+
+    File : :file:`davidson/u0_hs2_u0.irp.f_template_1554`
 
     .. code:: fortran
 
@@ -2092,6 +2231,7 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
+       * :c:data:`do_mo_cholesky`
        * :c:data:`n_det`
        * :c:data:`n_int`
        * :c:data:`nthreads_davidson`
@@ -2119,18 +2259,75 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_3`
-       * :c:func:`get_all_spin_singles_and_doubles_3`
-       * :c:func:`get_s2`
-       * :c:func:`i_h_j_double_alpha_beta`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
+       * :c:func:`h_s2_u_0_nstates_openmp_work_3_cholesky`
+       * :c:func:`i_h_j_double_alpha_beta_s2`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_h_j_single_spin`
 
  
-.. c:function:: h_s2_u_0_nstates_openmp_work_4:
+.. c:function:: void h_s2_u_0_nstates_openmp_work_3_cholesky(void)
 
 
-    File : :file:`davidson/u0_hs2_u0.irp.f_template_807`
+    File : :file:`davidson/u0_hs2_u0.irp.f_template_1554`
+
+    .. code:: fortran
+
+        subroutine H_S2_u_0_nstates_openmp_work_3_cholesky(v_t,s_t,u_t,N_st,sze,istart,iend,ishift,istep)
+
+
+    Computes $v_t = H | u_t \rangle$ and $s_t = S^2 | u_t\rangle$
+    
+    Default should be 1,N_det,0,1
+
+    Needs:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:data:`mo_integrals_map`
+       * :c:data:`mo_num`
+       * :c:data:`n_det`
+       * :c:data:`n_int`
+       * :c:data:`nthreads_davidson`
+       * :c:data:`psi_bilinear_matrix_columns_loc`
+       * :c:data:`psi_bilinear_matrix_order_transp_reverse`
+       * :c:data:`psi_bilinear_matrix_transp_rows_loc`
+       * :c:data:`psi_bilinear_matrix_transp_values`
+       * :c:data:`psi_bilinear_matrix_values`
+       * :c:data:`psi_det_alpha_unique`
+       * :c:data:`psi_det_beta_unique`
+       * :c:data:`singles_alpha_csc`
+       * :c:data:`singles_alpha_csc_idx`
+       * :c:data:`singles_beta_csc`
+       * :c:data:`singles_beta_csc_idx`
+
+    Called by:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:func:`h_s2_u_0_nstates_openmp_work_3`
+
+    Calls:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:func:`bitstring_to_list`
+       * :c:func:`get_all_spin_doubles`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_double_excitation_spin`
+       * :c:func:`get_mo_two_e_integrals_ij`
+       * :c:func:`get_single_excitation_spin`
+       * :c:func:`i_h_j_single_spin`
+
+ 
+.. c:function:: void h_s2_u_0_nstates_openmp_work_4(void)
+
+
+    File : :file:`davidson/u0_hs2_u0.irp.f_template_1554`
 
     .. code:: fortran
 
@@ -2146,6 +2343,7 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
+       * :c:data:`do_mo_cholesky`
        * :c:data:`n_det`
        * :c:data:`n_int`
        * :c:data:`nthreads_davidson`
@@ -2173,18 +2371,75 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_4`
-       * :c:func:`get_all_spin_singles_and_doubles_4`
-       * :c:func:`get_s2`
-       * :c:func:`i_h_j_double_alpha_beta`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
+       * :c:func:`h_s2_u_0_nstates_openmp_work_4_cholesky`
+       * :c:func:`i_h_j_double_alpha_beta_s2`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_h_j_single_spin`
 
  
-.. c:function:: h_s2_u_0_nstates_openmp_work_n_int:
+.. c:function:: void h_s2_u_0_nstates_openmp_work_4_cholesky(void)
 
 
-    File : :file:`davidson/u0_hs2_u0.irp.f_template_807`
+    File : :file:`davidson/u0_hs2_u0.irp.f_template_1554`
+
+    .. code:: fortran
+
+        subroutine H_S2_u_0_nstates_openmp_work_4_cholesky(v_t,s_t,u_t,N_st,sze,istart,iend,ishift,istep)
+
+
+    Computes $v_t = H | u_t \rangle$ and $s_t = S^2 | u_t\rangle$
+    
+    Default should be 1,N_det,0,1
+
+    Needs:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:data:`mo_integrals_map`
+       * :c:data:`mo_num`
+       * :c:data:`n_det`
+       * :c:data:`n_int`
+       * :c:data:`nthreads_davidson`
+       * :c:data:`psi_bilinear_matrix_columns_loc`
+       * :c:data:`psi_bilinear_matrix_order_transp_reverse`
+       * :c:data:`psi_bilinear_matrix_transp_rows_loc`
+       * :c:data:`psi_bilinear_matrix_transp_values`
+       * :c:data:`psi_bilinear_matrix_values`
+       * :c:data:`psi_det_alpha_unique`
+       * :c:data:`psi_det_beta_unique`
+       * :c:data:`singles_alpha_csc`
+       * :c:data:`singles_alpha_csc_idx`
+       * :c:data:`singles_beta_csc`
+       * :c:data:`singles_beta_csc_idx`
+
+    Called by:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:func:`h_s2_u_0_nstates_openmp_work_4`
+
+    Calls:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:func:`bitstring_to_list`
+       * :c:func:`get_all_spin_doubles`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_double_excitation_spin`
+       * :c:func:`get_mo_two_e_integrals_ij`
+       * :c:func:`get_single_excitation_spin`
+       * :c:func:`i_h_j_single_spin`
+
+ 
+.. c:function:: void h_s2_u_0_nstates_openmp_work_n_int(void)
+
+
+    File : :file:`davidson/u0_hs2_u0.irp.f_template_1554`
 
     .. code:: fortran
 
@@ -2200,6 +2455,7 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
+       * :c:data:`do_mo_cholesky`
        * :c:data:`n_det`
        * :c:data:`n_int`
        * :c:data:`nthreads_davidson`
@@ -2227,15 +2483,72 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_and_doubles_n_int`
-       * :c:func:`get_all_spin_singles_n_int`
-       * :c:func:`get_s2`
-       * :c:func:`i_h_j_double_alpha_beta`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
+       * :c:func:`h_s2_u_0_nstates_openmp_work_n_int_cholesky`
+       * :c:func:`i_h_j_double_alpha_beta_s2`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_h_j_single_spin`
 
  
-.. c:function:: h_s2_u_0_nstates_zmq:
+.. c:function:: void h_s2_u_0_nstates_openmp_work_n_int_cholesky(void)
+
+
+    File : :file:`davidson/u0_hs2_u0.irp.f_template_1554`
+
+    .. code:: fortran
+
+        subroutine H_S2_u_0_nstates_openmp_work_N_int_cholesky(v_t,s_t,u_t,N_st,sze,istart,iend,ishift,istep)
+
+
+    Computes $v_t = H | u_t \rangle$ and $s_t = S^2 | u_t\rangle$
+    
+    Default should be 1,N_det,0,1
+
+    Needs:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:data:`mo_integrals_map`
+       * :c:data:`mo_num`
+       * :c:data:`n_det`
+       * :c:data:`n_int`
+       * :c:data:`nthreads_davidson`
+       * :c:data:`psi_bilinear_matrix_columns_loc`
+       * :c:data:`psi_bilinear_matrix_order_transp_reverse`
+       * :c:data:`psi_bilinear_matrix_transp_rows_loc`
+       * :c:data:`psi_bilinear_matrix_transp_values`
+       * :c:data:`psi_bilinear_matrix_values`
+       * :c:data:`psi_det_alpha_unique`
+       * :c:data:`psi_det_beta_unique`
+       * :c:data:`singles_alpha_csc`
+       * :c:data:`singles_alpha_csc_idx`
+       * :c:data:`singles_beta_csc`
+       * :c:data:`singles_beta_csc_idx`
+
+    Called by:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:func:`h_s2_u_0_nstates_openmp_work_n_int`
+
+    Calls:
+
+    .. hlist::
+       :columns: 3
+
+       * :c:func:`bitstring_to_list`
+       * :c:func:`get_all_spin_doubles`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_double_excitation_spin`
+       * :c:func:`get_mo_two_e_integrals_ij`
+       * :c:func:`get_single_excitation_spin`
+       * :c:func:`i_h_j_single_spin`
+
+ 
+.. c:function:: void h_s2_u_0_nstates_zmq(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`
@@ -2284,15 +2597,14 @@ Subroutines / functions
        :columns: 3
 
        * :c:func:`davidson_collector`
-       * :c:func:`davidson_slave_inproc`
        * :c:func:`dset_order`
        * :c:func:`dtranspose`
        * :c:func:`end_parallel_job`
        * :c:func:`new_parallel_job`
-       * :c:func:`set_multiple_levels_omp`
+       * :c:func:`qp_bug`
 
  
-.. c:function:: h_s2_u_0_two_e_nstates_openmp:
+.. c:function:: void h_s2_u_0_two_e_nstates_openmp(void)
 
 
     File : :file:`davidson/u0_wee_u0.irp.f`
@@ -2334,7 +2646,7 @@ Subroutines / functions
        * :c:func:`h_s2_u_0_two_e_nstates_openmp_work`
 
  
-.. c:function:: h_s2_u_0_two_e_nstates_openmp_work:
+.. c:function:: void h_s2_u_0_two_e_nstates_openmp_work(void)
 
 
     File : :file:`davidson/u0_wee_u0.irp.f`
@@ -2376,7 +2688,7 @@ Subroutines / functions
        * :c:func:`h_s2_u_0_two_e_nstates_openmp_work_n_int`
 
  
-.. c:function:: h_s2_u_0_two_e_nstates_openmp_work_1:
+.. c:function:: void h_s2_u_0_two_e_nstates_openmp_work_1(void)
 
 
     File : :file:`davidson/u0_wee_u0.irp.f_template_457`
@@ -2418,15 +2730,15 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_1`
-       * :c:func:`get_all_spin_singles_and_doubles_1`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
        * :c:func:`get_s2`
        * :c:func:`i_h_j_double_alpha_beta`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_wee_j_single`
 
  
-.. c:function:: h_s2_u_0_two_e_nstates_openmp_work_2:
+.. c:function:: void h_s2_u_0_two_e_nstates_openmp_work_2(void)
 
 
     File : :file:`davidson/u0_wee_u0.irp.f_template_457`
@@ -2468,15 +2780,15 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_2`
-       * :c:func:`get_all_spin_singles_and_doubles_2`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
        * :c:func:`get_s2`
        * :c:func:`i_h_j_double_alpha_beta`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_wee_j_single`
 
  
-.. c:function:: h_s2_u_0_two_e_nstates_openmp_work_3:
+.. c:function:: void h_s2_u_0_two_e_nstates_openmp_work_3(void)
 
 
     File : :file:`davidson/u0_wee_u0.irp.f_template_457`
@@ -2518,15 +2830,15 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_3`
-       * :c:func:`get_all_spin_singles_and_doubles_3`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
        * :c:func:`get_s2`
        * :c:func:`i_h_j_double_alpha_beta`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_wee_j_single`
 
  
-.. c:function:: h_s2_u_0_two_e_nstates_openmp_work_4:
+.. c:function:: void h_s2_u_0_two_e_nstates_openmp_work_4(void)
 
 
     File : :file:`davidson/u0_wee_u0.irp.f_template_457`
@@ -2568,15 +2880,15 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_4`
-       * :c:func:`get_all_spin_singles_and_doubles_4`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
        * :c:func:`get_s2`
        * :c:func:`i_h_j_double_alpha_beta`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_wee_j_single`
 
  
-.. c:function:: h_s2_u_0_two_e_nstates_openmp_work_n_int:
+.. c:function:: void h_s2_u_0_two_e_nstates_openmp_work_n_int(void)
 
 
     File : :file:`davidson/u0_wee_u0.irp.f_template_457`
@@ -2618,15 +2930,15 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_and_doubles_n_int`
-       * :c:func:`get_all_spin_singles_n_int`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
        * :c:func:`get_s2`
        * :c:func:`i_h_j_double_alpha_beta`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_wee_j_single`
 
  
-.. c:function:: h_u_0_nstates_openmp:
+.. c:function:: void h_u_0_nstates_openmp(void)
 
 
     File : :file:`davidson/u0_h_u0.irp.f`
@@ -2657,7 +2969,6 @@ Subroutines / functions
        :columns: 3
 
        * :c:func:`davidson_diag_csf_hjj`
-       * :c:func:`davidson_diag_hjj`
        * :c:func:`davidson_diag_nonsym_hjj`
        * :c:func:`u_0_h_u_0`
 
@@ -2671,7 +2982,7 @@ Subroutines / functions
        * :c:func:`h_u_0_nstates_openmp_work`
 
  
-.. c:function:: h_u_0_nstates_openmp_work:
+.. c:function:: void h_u_0_nstates_openmp_work(void)
 
 
     File : :file:`davidson/u0_h_u0.irp.f`
@@ -2715,10 +3026,10 @@ Subroutines / functions
        * :c:func:`h_u_0_nstates_openmp_work_n_int`
 
  
-.. c:function:: h_u_0_nstates_openmp_work_1:
+.. c:function:: void h_u_0_nstates_openmp_work_1(void)
 
 
-    File : :file:`davidson/u0_h_u0.irp.f_template_757`
+    File : :file:`davidson/u0_h_u0.irp.f_template_762`
 
     .. code:: fortran
 
@@ -2761,17 +3072,17 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_1`
-       * :c:func:`get_all_spin_singles_and_doubles_1`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
        * :c:func:`i_h_j_double_alpha_beta`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_h_j_single_spin`
 
  
-.. c:function:: h_u_0_nstates_openmp_work_2:
+.. c:function:: void h_u_0_nstates_openmp_work_2(void)
 
 
-    File : :file:`davidson/u0_h_u0.irp.f_template_757`
+    File : :file:`davidson/u0_h_u0.irp.f_template_762`
 
     .. code:: fortran
 
@@ -2814,17 +3125,17 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_2`
-       * :c:func:`get_all_spin_singles_and_doubles_2`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
        * :c:func:`i_h_j_double_alpha_beta`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_h_j_single_spin`
 
  
-.. c:function:: h_u_0_nstates_openmp_work_3:
+.. c:function:: void h_u_0_nstates_openmp_work_3(void)
 
 
-    File : :file:`davidson/u0_h_u0.irp.f_template_757`
+    File : :file:`davidson/u0_h_u0.irp.f_template_762`
 
     .. code:: fortran
 
@@ -2867,17 +3178,17 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_3`
-       * :c:func:`get_all_spin_singles_and_doubles_3`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
        * :c:func:`i_h_j_double_alpha_beta`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_h_j_single_spin`
 
  
-.. c:function:: h_u_0_nstates_openmp_work_4:
+.. c:function:: void h_u_0_nstates_openmp_work_4(void)
 
 
-    File : :file:`davidson/u0_h_u0.irp.f_template_757`
+    File : :file:`davidson/u0_h_u0.irp.f_template_762`
 
     .. code:: fortran
 
@@ -2920,17 +3231,17 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_4`
-       * :c:func:`get_all_spin_singles_and_doubles_4`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
        * :c:func:`i_h_j_double_alpha_beta`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_h_j_single_spin`
 
  
-.. c:function:: h_u_0_nstates_openmp_work_n_int:
+.. c:function:: void h_u_0_nstates_openmp_work_n_int(void)
 
 
-    File : :file:`davidson/u0_h_u0.irp.f_template_757`
+    File : :file:`davidson/u0_h_u0.irp.f_template_762`
 
     .. code:: fortran
 
@@ -2973,14 +3284,14 @@ Subroutines / functions
     .. hlist::
        :columns: 3
 
-       * :c:func:`get_all_spin_singles_and_doubles_n_int`
-       * :c:func:`get_all_spin_singles_n_int`
+       * :c:func:`get_all_spin_singles`
+       * :c:func:`get_all_spin_singles_and_doubles`
        * :c:func:`i_h_j_double_alpha_beta`
        * :c:func:`i_h_j_double_spin`
        * :c:func:`i_h_j_single_spin`
 
  
-.. c:function:: h_u_0_nstates_zmq:
+.. c:function:: void h_u_0_nstates_zmq(void)
 
 
     File : :file:`davidson/davidson_parallel_nos2.irp.f`
@@ -3019,7 +3330,6 @@ Subroutines / functions
        :columns: 3
 
        * :c:func:`davidson_diag_csf_hjj`
-       * :c:func:`davidson_diag_hjj`
        * :c:func:`davidson_diag_nonsym_hjj`
        * :c:func:`u_0_h_u_0`
 
@@ -3034,10 +3344,9 @@ Subroutines / functions
        * :c:func:`dtranspose`
        * :c:func:`end_parallel_job`
        * :c:func:`new_parallel_job`
-       * :c:func:`set_multiple_levels_omp`
 
  
-.. c:function:: u_0_h_u_0:
+.. c:function:: void u_0_h_u_0(void)
 
 
     File : :file:`davidson/u0_h_u0.irp.f`
@@ -3071,7 +3380,7 @@ Subroutines / functions
        * :c:func:`h_u_0_nstates_zmq`
 
  
-.. c:function:: u_0_h_u_0_two_e:
+.. c:function:: void u_0_h_u_0_two_e(void)
 
 
     File : :file:`davidson/u0_wee_u0.irp.f`
@@ -3101,7 +3410,7 @@ Subroutines / functions
        * :c:func:`h_s2_u_0_two_e_nstates_openmp`
 
  
-.. c:function:: u_0_hs2_u_0:
+.. c:function:: void u_0_hs2_u_0(void)
 
 
     File : :file:`davidson/u0_hs2_u0.irp.f`
@@ -3145,7 +3454,7 @@ Subroutines / functions
        * :c:func:`h_s2_u_0_nstates_zmq`
 
  
-.. c:function:: zmq_get_n_states_diag:
+.. c:function:: void zmq_get_n_states_diag(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`
@@ -3174,7 +3483,7 @@ Subroutines / functions
        * :c:data:`n_states_diag`
 
  
-.. c:function:: zmq_put_n_states_diag:
+.. c:function:: void zmq_put_n_states_diag(void)
 
 
     File : :file:`davidson/davidson_parallel.irp.f`

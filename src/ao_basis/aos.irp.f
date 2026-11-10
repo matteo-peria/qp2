@@ -430,15 +430,28 @@ END_PROVIDER
 BEGIN_PROVIDER [ logical, use_pw ]
 
   implicit none
+  BEGIN_DOC
+  ! Flag set when the basis contains a plane wave part: the input
+  ! defines ao_expo_pw and at least one plane wave vector is
+  ! nonzero. The test checks component 4 of
+  ! ao_expo_pw_ord_transp, the squared norm of the plane wave
+  ! vector, against 1d-15.
+  END_DOC
 
   logical :: exist
+  integer :: i, j
 
   use_pw = .false.
 
   call ezfio_has_ao_basis_ao_expo_pw(exist)
   if(exist) then
     PROVIDE ao_expo_pw_ord_transp
-    if(maxval(dabs(ao_expo_pw_ord_transp(4,:,:))) .gt. 1d-15) use_pw = .true.
+    ! explicit loops: a 2D section in maxval creates a temporary array
+    do j = 1, ao_num
+      do i = 1, ao_prim_num_max
+        if(dabs(ao_expo_pw_ord_transp(4,i,j)) .gt. 1d-15) use_pw = .true.
+      enddo
+    enddo
   endif
 
 END_PROVIDER

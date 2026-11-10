@@ -98,6 +98,10 @@ END_PROVIDER
 
  BEGIN_PROVIDER [ double precision, Fock_matrix_diag_mo, (mo_num)]
    implicit none
+   BEGIN_DOC
+   ! Diagonal of the Fock matrix on the MO basis: element i
+   ! (1 <= i <= mo_num) is Fock_matrix_mo(i,i).
+   END_DOC
    integer :: i
    do i = 1, mo_num
      Fock_matrix_diag_mo(i) = Fock_matrix_mo(i,i)
@@ -128,7 +132,10 @@ BEGIN_PROVIDER [ double precision, Fock_matrix_mo, (mo_num,mo_num) ]
    !
    ! J. Chem. Phys. 133, 141102 (2010), https://doi.org/10.1063/1.3503173
    ! Coupling parameters from J. Chem. Phys. 125, 204110 (2006); https://doi.org/10.1063/1.2393223.
-   !       cc   oo   vv
+   !
+   ! ::
+   !
+   !  cc   oo   vv
    !  A  -0.5  0.5  1.5
    !  B   1.5  0.5 -0.5
    !

@@ -55,6 +55,13 @@ end
 
 subroutine run
   implicit none
+  BEGIN_DOC
+  ! Builds the CIS space (H_apply_cis, or H_apply_cis_sym when
+  ! pseudo_sym), diagonalizes the CI matrix (CI_eigenvectors
+  ! provider), stores the CIS energies in the |EZFIO| file, saves
+  ! a wave function truncated by save_threshold and prints the
+  ! state energies, plus the excitation energies when N_states > 1.
+  END_DOC
   integer                        :: i
 
   if(pseudo_sym)then
@@ -75,12 +82,17 @@ subroutine run
     print*,'Excitation energies (au)                     (eV)'
     do i = 2, N_states
       print*, i ,CI_energy(i) - CI_energy(1), (CI_energy(i) - CI_energy(1))/0.0367502d0
+      ! 0.0367502d0 converts the excitation energy from hartree to eV
     enddo
     print*,''
   endif
 
   call ezfio_set_cis_energy(CI_energy)
   psi_coef = ci_eigenvectors
+  ! Report first, on the vector as diagonalized; then replace the
+  ! symmetry-forbidden roundoff by exact zeros before saving.
+  call pg_print_state_irreps(CI_energy, CI_s2)
+  call pg_zero_state_irreps()
   SOFT_TOUCH psi_coef
   call save_wavefunction_truncated(save_threshold)
 

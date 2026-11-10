@@ -4,11 +4,11 @@ use gpu_affinity_mod
 BEGIN_PROVIDER [ type(gpu_blas), blas_handle ]
  implicit none
  BEGIN_DOC
- ! Handle for cuBLAS or RocBLAS
+ ! Handle for cuBLAS/RocBLAS, or the 1-byte CPU-emulation handle when
+ ! gpu_num = 0 (the simple_gpu CPU backend fully emulates the GPU BLAS
+ ! API on host memory)
  END_DOC
- if (gpu_num > 0) then
-   call gpu_blas_create(blas_handle)
- endif
+ call gpu_blas_create(blas_handle)
 ! call gpu_set_stream(blas_handle, gpu_default_stream)
 END_PROVIDER
 
@@ -17,6 +17,16 @@ END_PROVIDER
 &BEGIN_PROVIDER [ integer, gpu_busy_max_dgemv ]
 &BEGIN_PROVIDER [ integer, gpu_busy_max_dgemm ]
  implicit none
+ BEGIN_DOC
+ ! Number of ongoing GPU operations, one entry per GPU,
+ ! indexed from 0 to gpu_num. gpu_set_busy and gpu_unset_busy
+ ! increment and decrement it (OpenMP atomic). Callers compare
+ ! it with the corresponding cap before a BLAS call. The caps
+ ! gpu_busy_max_ddot, gpu_busy_max_dgemv and gpu_busy_max_dgemm
+ ! are set when gpu_num > 0 to 0, 4 and nthreads_pt2/(gpu_num*2).
+ ! The three caps are set from empirical measurements
+ ! (author, 2026-10-31).
+ END_DOC
  gpu_busy = 0
  if (gpu_num > 0) then
    gpu_busy_max_ddot = 0

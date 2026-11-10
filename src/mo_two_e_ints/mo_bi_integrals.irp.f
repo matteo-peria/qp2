@@ -97,6 +97,14 @@ END_PROVIDER
 
 subroutine four_idx_dgemm
   implicit none
+  BEGIN_DOC
+  ! Dense AO->MO transformation of the two-electron integrals by
+  ! four successive DGEMM multiplications by mo_coef. Integrals with
+  ! modulus at least mo_integrals_threshold are stored in
+  ! mo_integrals_map with the mo_two_e_integrals_index key (i<=k,
+  ! j<=l only). Called from the provider mo_two_e_integrals_in_map
+  ! when do_ao_cholesky is False and ao_num**4*32.d-9 < qp_max_mem.
+  END_DOC
   integer :: p,q,r,s,i,j,k,l
   double precision, allocatable :: a1(:,:,:,:)
   double precision, allocatable :: a2(:,:,:,:)
@@ -283,15 +291,14 @@ subroutine add_integrals_to_map(mask_ijkl)
   print*, 'Buffers : ', 8.*(mo_num*(n_j)*(n_k+1) + mo_num+&
       ao_num+ao_num*ao_num+ size_buffer*3)/(1024*1024), 'MB / core'
 
+  PROVIDE mo_coef mo_coef_transp
   !$OMP PARALLEL PRIVATE(l1,k1,j1,i1,i2,i3,i4,i,j,k,l,c, ii1,kmax,   &
       !$OMP  two_e_tmp_0_idx, two_e_tmp_0, two_e_tmp_1,two_e_tmp_2,two_e_tmp_3,&
       !$OMP  buffer_i,buffer_value,n_integrals,wall_2,i0,j0,k0,l0,   &
-      !$OMP  wall_0,thread_num)                             &
+      !$OMP  wall_0,thread_num)                                      &
       !$OMP  DEFAULT(NONE)                                           &
-      !$OMP  SHARED(size_buffer,ao_num,mo_num,n_i,n_j,n_k,n_l,   &
-      !$OMP  mo_coef_transp,                                         &
-      !$OMP  mo_coef_transp_is_built, list_ijkl,                     &
-      !$OMP  mo_coef_is_built, wall_1,                               &
+      !$OMP  SHARED(size_buffer,ao_num,mo_num,n_i,n_j,n_k,n_l,       &
+      !$OMP  mo_coef_transp, list_ijkl, wall_1,                      &
       !$OMP  mo_coef,mo_integrals_threshold,mo_integrals_map)
 
   thread_num = 0
@@ -301,10 +308,10 @@ subroutine add_integrals_to_map(mask_ijkl)
   wall_0 = wall_1
   allocate(two_e_tmp_3(mo_num, n_j, n_k),                 &
       two_e_tmp_1(mo_num),                                &
-      two_e_tmp_0(ao_num,ao_num),                                   &
-      two_e_tmp_0_idx(ao_num),                                      &
+      two_e_tmp_0(ao_num,ao_num),                         &
+      two_e_tmp_0_idx(ao_num),                            &
       two_e_tmp_2(mo_num, n_j),                           &
-      buffer_i(size_buffer),                                         &
+      buffer_i(size_buffer),                              &
       buffer_value(size_buffer) )
 
   !$OMP DO SCHEDULE(guided)

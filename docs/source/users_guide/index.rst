@@ -10,6 +10,17 @@ Index of commands
    qp_*
 
 
+Guides
+======
+
+.. toctree::
+   :maxdepth: 1
+
+   cipsi
+   symmetry
+   parallelism
+
+
 Index of programs
 =================
 

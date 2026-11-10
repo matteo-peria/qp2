@@ -25,6 +25,14 @@ end
 
 subroutine check_coherence_functional
  implicit none
+   BEGIN_DOC
+!   Start-up check: stop with a diagnostic if
+!   exchange_functional or correlation_functional is neither
+!   "None" nor contains the substring "sr", advising to use
+!   range-separated functionals or to switch to the KS_SCF
+!   program. The call from the rs_ks_scf program body is
+!   currently commented out.
+   END_DOC
  integer :: ifound_x,ifound_c
  if(exchange_functional.eq."None")then
   ifound_x = 1
@@ -98,6 +106,9 @@ subroutine run
   write(json_unit,*) ']'
   call json_close
   call ezfio_set_kohn_sham_rs_energy(SCF_energy)
+
+  call pg_print_mo_energies(Fock_matrix_diag_mo, mo_num)
+  call pg_report_mo_symmetry()
 
  write(*, '(A22,X,F16.10)') 'one_e_energy = ',one_e_energy
  write(*, '(A22,X,F16.10)') 'two_e_energy = ',two_e_energy

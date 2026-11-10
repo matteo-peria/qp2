@@ -48,14 +48,16 @@ fci
  .. hlist:: 
     :columns: 3 
  
+    * :c:data:`all_mo_integrals` 
     * :c:data:`do_pt2` 
     * :c:data:`is_zmq_slave` 
     * :c:data:`json_int_fmt` 
     * :c:data:`json_unit` 
-    * :c:data:`mo_two_e_integrals_in_map` 
     * :c:data:`n_states` 
     * :c:data:`psi_coef` 
     * :c:data:`psi_det` 
+    * :c:data:`psi_energy` 
+    * :c:data:`psi_energy_with_nucl_rep` 
     * :c:data:`pt2_min_parallel_tasks` 
  
  Calls: 
@@ -64,6 +66,7 @@ fci
     :columns: 3 
  
     * :c:func:`json_close` 
+    * :c:func:`pg_print_state_irreps` 
     * :c:func:`run_cipsi` 
     * :c:func:`run_slave_cipsi` 
     * :c:func:`run_stochastic_cipsi` 
@@ -84,6 +87,7 @@ fci
     * :c:data:`c0_weight` 
     * :c:data:`distributed_davidson` 
     * :c:data:`psi_coef` 
+    * :c:data:`psi_det_sorted_bit` 
     * :c:data:`psi_det_sorted_bit` 
     * :c:data:`psi_configuration` 
     * :c:data:`psi_det` 
