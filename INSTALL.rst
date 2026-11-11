@@ -110,6 +110,79 @@ Example:
 
    ./configure -i ninja
 
+Optional managed dependency stacks
+----------------------------------
+
+The experimental managed installer is additive and does not change the
+behaviour of :command:`configure`. It reads the selected compilation
+configuration with the same Python parser used by the Ninja build generator,
+and uses its C compiler, Fortran compiler, flags and BLAS/LAPACK libraries:
+
+.. code:: bash
+
+   ./scripts/installation/configure_managed \
+       -c config/gfortran_openblas.cfg -i all
+
+Compiled packages are installed in a versioned stack below
+:file:`${QP_ROOT}/dependencies/` by default. Use
+:samp:`--dependency-prefix` to keep a stack outside the QP checkout and
+share it with another program:
+
+.. code:: bash
+
+   ./scripts/installation/configure_managed \
+       -c config/gfortran_openblas.cfg \
+       --dependency-prefix "$HOME/software/qp-dependencies/gcc" \
+       -i all
+
+The generated :file:`etc/10.dependencies.rc` activates that stack and exports
+the individual package roots. A CHAMP build using the same compiler can source
+this file before its own configuration step. Fortran module files are
+compiler-specific, so GNU and Intel builds need separate managed stacks.
+The compiler itself is not installed: a module-free workstation setup should
+use directly executable, preferably absolute, compiler paths in its private
+QP compilation configuration. Each external prefix is restricted to one
+configuration/compiler fingerprint.
+
+Cluster-provided HDF5, TREXIO, and QMCkl installations can be used without
+reinstalling them:
+
+.. code:: bash
+
+   ./scripts/installation/configure_managed \
+       -c config/cluster_gcc.cfg \
+       --with-hdf5 "$HDF5_ROOT" \
+       --with-trexio "$TREXIO_ROOT" \
+       --with-qmckl "$QMCKL_ROOT" \
+       -i all
+
+Each supplied prefix is activated and checked with a real API call. It is
+omitted from :samp:`-i all`; an explicit :samp:`-i hdf5`,
+:samp:`-i trexio`, or :samp:`-i qmckl` validates the external package rather
+than replacing it. External QMCkl and TREXIO libraries must have compatible
+transitive dependencies, which the compile-and-run checks verify.
+
+TREXIO and QMCkl can be installed either from a release tarball or from an
+exact Git revision. The managed defaults are defined in
+:file:`config/dependencies.rc`; QMCkl follows the tip of its configured Git
+branch when it is installed. For example:
+
+.. code:: bash
+
+   ./scripts/installation/configure_managed \
+       -c config/gfortran_openblas.cfg \
+       --dependency-prefix "$HOME/opt/qp2-deps/gcc" \
+       --qmckl-ref master -i qmckl
+
+The branch is resolved to a full commit hash before building. That hash is
+used in the installation directory name and recorded in
+:file:`etc/10.dependencies.rc`. A later :samp:`-i qmckl` updates the branch;
+ordinary configure runs continue using the recorded commit. Use
+:samp:`--qmckl-version 1.1.0` to switch the stack back to a release. TREXIO
+supports the analogous :samp:`--trexio-ref` and :samp:`--trexio-version`
+options. Git-source builds require Autotools, Python, and Emacs because the
+upstream repositories contain maintainer sources.
+
 
 
 If the :command:`configure` executable fails to install a specific dependency

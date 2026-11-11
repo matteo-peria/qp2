@@ -58,6 +58,84 @@ Options
    :command:`irpf90` executable is not found in the :envvar:`PATH`,
    configure builds it from the :file:`external/irpf90` submodule.
 
+Optional managed dependencies
+=============================
+
+The experimental :command:`scripts/installation/configure_managed` command is
+an opt-in alternative that installs compiled dependencies with the compilers
+and flags selected by a QP compilation configuration. The existing
+:command:`configure` command and its installation layout are unchanged.
+
+For example:
+
+.. code:: bash
+
+   ./scripts/installation/configure_managed \
+       -c config/gfortran_openblas.cfg -i all
+
+By default, compiled packages are installed in a versioned, compiler-specific
+stack below :file:`${QP_ROOT}/dependencies/`. An external stack can be shared
+with another program, such as CHAMP:
+
+.. code:: bash
+
+   ./scripts/installation/configure_managed \
+       -c config/gfortran_openblas.cfg \
+       --dependency-prefix "$HOME/software/qp-dependencies/gcc" \
+       -i all
+
+Individual cluster-provided installations can be selected explicitly:
+
+.. code:: bash
+
+   ./scripts/installation/configure_managed \
+       -c config/cluster_gcc.cfg \
+       --with-hdf5 "$HDF5_ROOT" \
+       --with-trexio "$TREXIO_ROOT" \
+       --with-qmckl "$QMCKL_ROOT" \
+       -i all
+
+Packages supplied with :samp:`--with-hdf5`, :samp:`--with-trexio`, or
+:samp:`--with-qmckl` are validated and recorded in the activation manifest,
+but omitted from managed installation. This applies both to :samp:`-i all`
+and to an explicit :samp:`-i` request for the same package.
+
+QMCkl and TREXIO may also be built directly from Git. A branch is resolved to
+an exact commit before installation, and the compiler-specific stack records
+both values:
+
+.. code:: bash
+
+   ./scripts/installation/configure_managed \
+       -c config/gfortran_openblas.cfg \
+       --dependency-prefix "$HOME/opt/qp2-deps/gcc" \
+       --qmckl-ref master -i qmckl
+
+Re-running :samp:`-i qmckl` refreshes the branch. Runs that do not install
+QMCkl reuse the previously resolved commit. Select a release instead with
+:samp:`--qmckl-version`; :samp:`--trexio-ref` and
+:samp:`--trexio-version` provide the same choice for TREXIO. Git-source builds
+need Autotools, Python, and Emacs to generate the distributed sources.
+
+The command generates :file:`etc/10.dependencies.rc`. Sourcing this file
+activates the selected executables and libraries and exports package roots
+such as :envvar:`HDF5_ROOT`, :envvar:`TREXIO_ROOT`, and
+:envvar:`QMCKL_ROOT`:
+
+.. code:: bash
+
+   source /path/to/qp2/etc/10.dependencies.rc
+
+The managed installer installs libraries and tools, not the compiler itself.
+To avoid environment modules on a workstation, use directly executable,
+preferably absolute, compiler paths in a private compilation configuration.
+An external dependency prefix is stamped with its configuration and compiler
+fingerprint; use a different prefix after changing either one.
+
+Programs using the Fortran interfaces must use the same Fortran compiler as
+the selected stack. In particular, GNU and Intel builds require separate
+HDF5, TREXIO, and QMCkl stacks.
+
 GPU acceleration
 ================
 

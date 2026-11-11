@@ -1,2 +1,5 @@
 00.qp_root
+00.qp_root.rc
+10.dependencies.rc
+last_config.rc
 local.rc

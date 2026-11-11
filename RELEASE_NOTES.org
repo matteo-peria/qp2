@@ -19,6 +19,8 @@
   - Accelerated restore_symmetry
   - Point charges in the Hamiltonian
   - Removed cryptokit dependency in OCaml
+  - Added an optional compiler-aware managed dependency installer with
+    release and reproducible Git-revision sources for TREXIO and QMCkl
   - Using now standard convention in RDM
   - Added molecular properties
   - Added GTOs with complex exponent
