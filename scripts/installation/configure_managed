@@ -621,6 +621,7 @@ function find_dir() {
 }
 
 CONFIG_CC="$(get_config_option CC)"
+CONFIG_CXX="$(get_config_option CXX)"
 CONFIG_FC="$(get_config_option FC)"
 CONFIG_CFLAGS="$(get_config_option CFLAGS)"
 CONFIG_FCFLAGS="$(get_config_option FCFLAGS)"
@@ -646,8 +647,11 @@ else
 fi
 CONFIG_HASH="$({
         [[ -n ${CONFIG} ]] && cat "${CONFIG}"
-        printf '%s\n' "CC=${CONFIG_CC}" "FC=${CONFIG_FC}"
+        printf '%s\n' "CC=${CONFIG_CC}" "CXX=${CONFIG_CXX}" \
+                "FC=${CONFIG_FC}"
         "${CONFIG_CC%% *}" --version 2> /dev/null || true
+        [[ -z ${CONFIG_CXX} ]] || \
+                "${CONFIG_CXX%% *}" --version 2> /dev/null || true
         "${CONFIG_FC%% *}" --version 2> /dev/null || true
         } | ${HASH_COMMAND} | cut -c 1-12)"
 STACK_ID="${CONFIG_NAME}-${CONFIG_HASH}"
@@ -1278,6 +1282,9 @@ EOF
 
     elif [[ ${PACKAGE} = zeromq ]] ; then
 
+            [[ -n ${CONFIG_CXX} ]] || error \
+              "CXX is not defined in ${CONFIG:-the selected compiler environment}." \
+              "Add CXX to the selected configuration file."
             VERSION=$ZEROMQ_VERSION
             PREFIX="$(package_prefix zeromq "${VERSION}")"
             execute << EOF
@@ -1287,7 +1294,7 @@ EOF
               tar -zxf zeromq-${VERSION}.tar.gz && rm zeromq-${VERSION}.tar.gz
               cd zeromq-${VERSION}
               [[ "${SYSTEM}" = "Darwin" ]] && ./autogen.sh
-              ${CONFIGURE_CC_ENV} CXX="${CXX:-g++}" ${CONFIGURE_CFLAGS_ENV} ./configure --prefix="${PREFIX}" --without-libsodium --enable-libunwind=no
+              ${CONFIGURE_CC_ENV} CXX="${CONFIG_CXX}" ${CONFIGURE_CFLAGS_ENV} ./configure --prefix="${PREFIX}" --without-libsodium --enable-libunwind=no
               make -j 8
               make install
 EOF
