@@ -105,6 +105,7 @@ function canonicalize_external_prefix() {
 
 function execute () {
     local _command
+    local _status
     echo "Executing:"
     while read -r line; do
       echo "  " $line
@@ -113,9 +114,13 @@ function execute () {
     sleep 1
     echo ""
     printf "\e[0;94m"
-    ( eval "set -e ; set -x ; $_command set +x" ) || exit -1
+    ( eval "set -e ; set -x ; $_command set +x" )
+    _status=$?
     printf "\e[m"
     echo ""
+    if [[ ${_status} -ne 0 ]] ; then
+        exit "${_status}"
+    fi
 }
 
 function get_config_option() {
@@ -469,6 +474,7 @@ EOF
 
 function check_simple_gpu() {
         cat > "${QP_ROOT}"/external/tmp.c <<'EOF'
+#include <stddef.h>
 #include <simple_gpu.h>
 int main(void) {
   return gpu_ndevices() < 0;
@@ -1356,6 +1362,7 @@ EOF
             execute << EOF
               cd "\${QP_ROOT}"/external
               tar --gunzip --extract --file qp2-dependencies/resultsFile-v2.3.tar.gz
+              rm -rf "\${QP_ROOT}/external/Python/resultsFile"
               mv resultsFile-*/resultsFile "\${QP_ROOT}/external/Python/"
 EOF
 
