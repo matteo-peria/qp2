@@ -22,6 +22,8 @@
   - Added an optional compiler-aware managed dependency installer with
     isolated dependency prefixes, external-library validation, and
     reproducible release or Git-revision sources for TREXIO and QMCkl
+  - Preserve tracked EZFIO metadata when cleaning generated configuration
+    files
   - Using now standard convention in RDM
   - Added molecular properties
   - Added GTOs with complex exponent

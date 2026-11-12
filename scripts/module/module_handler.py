@@ -24,6 +24,7 @@ import sys
 import os.path
 from collections import namedtuple
 import shutil
+import subprocess
 
 
 
@@ -41,6 +42,26 @@ def is_module(path_module_rel):
 
 def is_plugin(path_module_rel):
     return os.path.isfile(os.path.join(QP_PLUGINS, path_module_rel, "NEED"))
+
+
+def get_tracked_ezfio_config_files():
+    """Return EZFIO config files that must survive generated cleanup."""
+    config_dir = os.path.join(QP_EZFIO, "config")
+    try:
+        output = subprocess.check_output(
+            ["git", "-C", QP_EZFIO, "ls-files", "--", "config"],
+            text=True,
+            stderr=subprocess.DEVNULL)
+    except (OSError, subprocess.CalledProcessError):
+        # Keep the known bootstrap files if EZFIO is not a Git checkout.
+        return {".empty", "ezfio.config"}
+
+    tracked = set()
+    for path in output.splitlines():
+        absolute_path = os.path.join(QP_EZFIO, path)
+        if os.path.dirname(absolute_path) == config_dir:
+            tracked.add(os.path.basename(path))
+    return tracked
 
 
 def get_binaries(path_module):
@@ -232,9 +253,13 @@ if __name__ == '__main__':
         # Filter out all non-modules
         l_module = [f for f in l_module if is_module(f) ]
 
-        # Remove all produced ezfio_config files
-        for filename in os.listdir( os.path.join(QP_EZFIO, "config") ):
-            os.remove( os.path.join(QP_EZFIO, "config", filename) )
+        # Remove generated EZFIO metadata without deleting tracked submodule
+        # files such as config/.empty and config/ezfio.config.
+        tracked_config = get_tracked_ezfio_config_files()
+        for filename in os.listdir(os.path.join(QP_EZFIO, "config")):
+            if filename in tracked_config:
+                continue
+            os.remove(os.path.join(QP_EZFIO, "config", filename))
 
 
     elif not arguments['<module_name>']:
