@@ -21,7 +21,7 @@ DEFAULT_ZLIB_VERSION="${ZLIB_VERSION:-}"
 DEFAULT_SIMPLE_GPU_VERSION="${SIMPLE_GPU_VERSION:-}"
 
 if [[ -f "${QP_ROOT}"/config/dependencies.rc ]] ; then
-        source "${QP_ROOT}"/config/dependencies.rc
+    source "${QP_ROOT}"/config/dependencies.rc
 fi
 
 TREXIO_VERSION="${DEFAULT_TREXIO_VERSION:-${TREXIO_VERSION}}"
@@ -36,11 +36,11 @@ ZLIB_VERSION="${DEFAULT_ZLIB_VERSION:-${ZLIB_VERSION}}"
 SIMPLE_GPU_VERSION="${DEFAULT_SIMPLE_GPU_VERSION:-${SIMPLE_GPU_VERSION}}"
 
 if [[ -z ${TREXIO_VERSION} || -z ${QMCKL_VERSION} || \
-      -z ${HDF5_VERSION} || -z ${OPENBLAS_VERSION} || \
-      -z ${ZEROMQ_VERSION} || -z ${F77ZMQ_VERSION} || \
-      -z ${ZLIB_VERSION} || -z ${SIMPLE_GPU_VERSION} ]] ; then
-        echo "$(basename $0): dependency versions must be defined."
-        exit 2
+          -z ${HDF5_VERSION} || -z ${OPENBLAS_VERSION} || \
+          -z ${ZEROMQ_VERSION} || -z ${F77ZMQ_VERSION} || \
+          -z ${ZLIB_VERSION} || -z ${SIMPLE_GPU_VERSION} ]] ; then
+    echo "$(basename $0): dependency versions must be defined."
+    exit 2
 fi
 
 function help()
@@ -76,7 +76,8 @@ Options:
   --qmckl-ref <ref>        Install QMCkl from a Git branch, tag, or commit.
   --dependency-prefix <path>
                           Install compiled dependencies below this prefix.
-                          The default is a versioned stack inside QP_ROOT.
+                          The default is dependencies/<config-name> inside
+                          QP_ROOT.
 
 Example:
   ./scripts/installation/$(basename $0) -c config/gfortran.cfg
@@ -95,12 +96,12 @@ function error() {
 }
 
 function canonicalize_external_prefix() {
-        local package=$1
-        local prefix=$2
-        if [[ ! -d ${prefix} ]] ; then
-                error "external ${package} prefix ${prefix} is not a directory."
-        fi
-        (cd "${prefix}" && pwd -P)
+    local package=$1
+    local prefix=$2
+    if [[ ! -d ${prefix} ]] ; then
+        error "external ${package} prefix ${prefix} is not a directory."
+    fi
+    (cd "${prefix}" && pwd -P)
 }
 
 function execute () {
@@ -108,8 +109,8 @@ function execute () {
     local _status
     echo "Executing:"
     while read -r line; do
-      echo "  " $line
-      _command+="${line} ;"
+        echo "  " $line
+        _command+="${line} ;"
     done
     sleep 1
     echo ""
@@ -124,11 +125,11 @@ function execute () {
 }
 
 function get_config_option() {
-        if [[ -z ${CONFIG} ]] ; then
-                return 0
-        fi
+    if [[ -z ${CONFIG} ]] ; then
+        return 0
+    fi
 
-        python3 - "${QP_ROOT}" "${CONFIG}" "$1" <<'PY'
+    python3 - "${QP_ROOT}" "${CONFIG}" "$1" <<'PY'
 import os
 import sys
 
@@ -144,54 +145,54 @@ PY
 }
 
 function find_hdf5_wrapper() {
-        local wrapper
-        if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
-                for wrapper in h5pcc h5cc ; do
-                        if [[ -x ${EXTERNAL_HDF5_PREFIX}/bin/${wrapper} ]] ; then
-                                echo "${EXTERNAL_HDF5_PREFIX}/bin/${wrapper}"
-                                return 0
-                        fi
-                done
-                return 0
-        fi
-        if [[ -n ${H5CC} ]] ; then
-                echo "${H5CC}"
-                return 0
-        fi
-
+    local wrapper
+    if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
         for wrapper in h5pcc h5cc ; do
-                wrapper=$(find_exe "${wrapper}")
-                if [[ ${wrapper} != $(not_found) ]] ; then
-                        echo "${wrapper}"
-                        return 0
-                fi
+            if [[ -x ${EXTERNAL_HDF5_PREFIX}/bin/${wrapper} ]] ; then
+                echo "${EXTERNAL_HDF5_PREFIX}/bin/${wrapper}"
+                return 0
+            fi
         done
+        return 0
+    fi
+    if [[ -n ${H5CC} ]] ; then
+        echo "${H5CC}"
+        return 0
+    fi
+
+    for wrapper in h5pcc h5cc ; do
+        wrapper=$(find_exe "${wrapper}")
+        if [[ ${wrapper} != $(not_found) ]] ; then
+            echo "${wrapper}"
+            return 0
+        fi
+    done
 }
 
 function find_hdf5_fortran_wrapper() {
-        local wrapper
-        if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
-                for wrapper in h5pfc h5fc ; do
-                        if [[ -x ${EXTERNAL_HDF5_PREFIX}/bin/${wrapper} ]] ; then
-                                echo "${EXTERNAL_HDF5_PREFIX}/bin/${wrapper}"
-                                return 0
-                        fi
-                done
-                not_found
-                return 0
-        fi
-        if [[ -n ${H5FC} ]] ; then
-                echo "${H5FC}"
-                return 0
-        fi
+    local wrapper
+    if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
         for wrapper in h5pfc h5fc ; do
-                wrapper=$(find_exe "${wrapper}")
-                if [[ ${wrapper} != $(not_found) ]] ; then
-                        echo "${wrapper}"
-                        return 0
-                fi
+            if [[ -x ${EXTERNAL_HDF5_PREFIX}/bin/${wrapper} ]] ; then
+                echo "${EXTERNAL_HDF5_PREFIX}/bin/${wrapper}"
+                return 0
+            fi
         done
         not_found
+        return 0
+    fi
+    if [[ -n ${H5FC} ]] ; then
+        echo "${H5FC}"
+        return 0
+    fi
+    for wrapper in h5pfc h5fc ; do
+        wrapper=$(find_exe "${wrapper}")
+        if [[ ${wrapper} != $(not_found) ]] ; then
+            echo "${wrapper}"
+            return 0
+        fi
+    done
+    not_found
 }
 
 PACKAGES=""
@@ -308,11 +309,11 @@ while getopts "d:c:i:g:h" c ; do
             case "$OPTARG" in
                 "") help ; break;;
                 *) if [[ -f $OPTARG ]] ; then
-                      CONFIG="$(cd "$(dirname "$OPTARG")" ; pwd -P)/$(basename "$OPTARG")"
-                      CONFIG_FROM_COMMAND=1
+                       CONFIG="$(cd "$(dirname "$OPTARG")" ; pwd -P)/$(basename "$OPTARG")"
+                       CONFIG_FROM_COMMAND=1
                    else
-                      error "error: configuration file $OPTARG not found."
-                      exit 1
+                       error "error: configuration file $OPTARG not found."
+                       exit 1
                    fi
             esac;;
         i)
@@ -332,28 +333,28 @@ while getopts "d:c:i:g:h" c ; do
 done
 
 if [[ ${CONFIG_FROM_COMMAND} = 1 ]] ; then
-        printf "CONFIG=%q\n" "${CONFIG}" > "${CONFIG_STATE_FILE}"
+    printf "CONFIG=%q\n" "${CONFIG}" > "${CONFIG_STATE_FILE}"
 elif [[ -f "${CONFIG_STATE_FILE}" ]] ; then
-        source "${CONFIG_STATE_FILE}"
-        if [[ -n ${CONFIG} ]] ; then
-                if [[ -f ${CONFIG} ]] ; then
-                        echo "Reusing configuration file: ${CONFIG}"
-                else
-                        error "remembered configuration file ${CONFIG} not found. Run $(basename $0) -c <file>."
-                fi
+    source "${CONFIG_STATE_FILE}"
+    if [[ -n ${CONFIG} ]] ; then
+        if [[ -f ${CONFIG} ]] ; then
+            echo "Reusing configuration file: ${CONFIG}"
+        else
+            error "remembered configuration file ${CONFIG} not found. Run $(basename $0) -c <file>."
         fi
+    fi
 fi
 
 if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
-        EXTERNAL_HDF5_PREFIX="$(canonicalize_external_prefix HDF5 \
+    EXTERNAL_HDF5_PREFIX="$(canonicalize_external_prefix HDF5 \
                 "${EXTERNAL_HDF5_PREFIX}")"
 fi
 if [[ -n ${EXTERNAL_TREXIO_PREFIX} ]] ; then
-        EXTERNAL_TREXIO_PREFIX="$(canonicalize_external_prefix TREXIO \
+    EXTERNAL_TREXIO_PREFIX="$(canonicalize_external_prefix TREXIO \
                 "${EXTERNAL_TREXIO_PREFIX}")"
 fi
 if [[ -n ${EXTERNAL_QMCKL_PREFIX} ]] ; then
-        EXTERNAL_QMCKL_PREFIX="$(canonicalize_external_prefix QMCkl \
+    EXTERNAL_QMCKL_PREFIX="$(canonicalize_external_prefix QMCkl \
                 "${EXTERNAL_QMCKL_PREFIX}")"
 fi
 
@@ -364,7 +365,7 @@ git -C "${QP_ROOT}" submodule update
 
 SYSTEM=$(uname -s)
 if [[ ${SYSTEM} = "Linux" ]] ; then
-        SYSTEM=""
+    SYSTEM=""
 fi
 ARCHITECTURE=$(uname -m)${SYSTEM}
 git -C "${QP_ROOT}/external/qp2-dependencies" checkout master
@@ -375,22 +376,22 @@ echo "Architecture: ${ARCHITECTURE}"
 rm -f ${QP_ROOT}/src/gpu_arch
 rm -f ${QP_ROOT}/src/*/gpu_arch
 case "$GPU" in
-  amd) # AMD
-     echo "Activating AMD GPU acceleration"
-     ln -s ${QP_ROOT}/plugins/local/gpu_amd ${QP_ROOT}/src/gpu_arch
-     ;;
-  intel) # Intel
-     echo "Activating Intel GPU acceleration (EXPERIMENTAL)"
-     ln -s ${QP_ROOT}/plugins/local/gpu_intel ${QP_ROOT}/src/gpu_arch
-     ;;
-  nvidia) # Nvidia
-     echo "Activating Nvidia GPU acceleration"
-     ln -s ${QP_ROOT}/plugins/local/gpu_nvidia ${QP_ROOT}/src/gpu_arch
-     ;;
-  *) # No Acceleration
-     echo "Disabling GPU acceleration"
-     ln -s ${QP_ROOT}/plugins/local/gpu_x86 ${QP_ROOT}/src/gpu_arch
-     ;;
+    amd) # AMD
+        echo "Activating AMD GPU acceleration"
+        ln -s ${QP_ROOT}/plugins/local/gpu_amd ${QP_ROOT}/src/gpu_arch
+        ;;
+    intel) # Intel
+        echo "Activating Intel GPU acceleration (EXPERIMENTAL)"
+        ln -s ${QP_ROOT}/plugins/local/gpu_intel ${QP_ROOT}/src/gpu_arch
+        ;;
+    nvidia) # Nvidia
+        echo "Activating Nvidia GPU acceleration"
+        ln -s ${QP_ROOT}/plugins/local/gpu_nvidia ${QP_ROOT}/src/gpu_arch
+        ;;
+    *) # No Acceleration
+        echo "Disabling GPU acceleration"
+        ln -s ${QP_ROOT}/plugins/local/gpu_x86 ${QP_ROOT}/src/gpu_arch
+        ;;
 esac
 
 # Trim leading and trailing spaces
@@ -398,227 +399,7 @@ PACKAGES=$(echo $PACKAGES | xargs)
 
 echo "export QP_ROOT=\"$QP_ROOT\"" > ${QP_ROOT}/etc/00.qp_root.rc
 
-function fail() {
-        echo "You can try to install it using the -i option."
-        echo "Please refer to INSTALL.rst to install the missing dependencies."
-        exit -1
-}
-
-function success() {
-        echo ""
-        echo "Configuration successful."
-        exit 0
-}
-
-function not_found() {
-   echo 'not_found'
-}
-
-function find_exe() {
-        which $1 2> /dev/null || not_found
-}
-
-function find_python_lib() {
-        python3 -c "import $1" &> /dev/null && echo "$1" || not_found
-}
-
-function check_c_program() {
-        eval "${CONFIG_CC} ${CONFIG_CFLAGS} \"${QP_ROOT}\"/external/tmp.c -o \"${QP_ROOT}\"/external/tmp.exe ${CONFIG_LIB} $*" 2> /dev/null
-        if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
-           "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.c
-                echo "found"
-        else
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.c
-                not_found
-        fi
-}
-
-function check_zeromq() {
-        cat > "${QP_ROOT}"/external/tmp.c <<'EOF'
-#include <zmq.h>
-int main(void) {
-  int major, minor, patch;
-  zmq_version(&major, &minor, &patch);
-  return major < 0;
-}
-EOF
-        check_c_program -lzmq
-}
-
-function check_gmp() {
-        cat > "${QP_ROOT}"/external/tmp.c <<'EOF'
-#include <gmp.h>
-int main(void) {
-  mpz_t value;
-  mpz_init_set_ui(value, 42ul);
-  int result = mpz_cmp_ui(value, 42ul);
-  mpz_clear(value);
-  return result != 0;
-}
-EOF
-        check_c_program -lgmp
-}
-
-function check_zlib() {
-        cat > "${QP_ROOT}"/external/tmp.c <<'EOF'
-#include <zlib.h>
-int main(void) {
-  return zlibVersion() == 0;
-}
-EOF
-        check_c_program -lz
-}
-
-function check_simple_gpu() {
-        cat > "${QP_ROOT}"/external/tmp.c <<'EOF'
-#include <stddef.h>
-#include <simple_gpu.h>
-int main(void) {
-  return gpu_ndevices() < 0;
-}
-EOF
-        check_c_program -lsimple_gpu-cpu
-}
-
-function check_trexio() {
-        cat > "${QP_ROOT}"/external/tmp.f90 <<'EOF'
-program main
-  use trexio
-  if (.not. trexio_has_back_end(TREXIO_TEXT)) stop 1
-end program main
-EOF
-        eval "${CONFIG_FC} ${CONFIG_FCFLAGS} \"${QP_ROOT}\"/src/trexio/trexio_module.F90 \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe ${CONFIG_LIB} -ltrexio" 2> /dev/null
-        if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
-           "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.f90 trexio.mod
-                echo "found"
-        else
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.f90 trexio.mod
-                not_found
-        fi
-}
-
-function check_qmckl() {
-        cat > "${QP_ROOT}"/external/tmp.f90 <<'EOF'
-program main
-  use qmckl
-  integer(qmckl_context) :: context
-  integer(qmckl_exit_code) :: rc
-  context = qmckl_context_create()
-  if (context == QMCKL_NULL_CONTEXT) stop 1
-  rc = qmckl_context_destroy(context)
-  if (rc /= QMCKL_SUCCESS) stop 2
-end program main
-EOF
-        eval "${CONFIG_FC} ${CONFIG_FCFLAGS} \"${QP_ROOT}\"/plugins/local/qmckl/qmckl.F90 \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe ${CONFIG_LIB} ${BLAS_LIBS:-${CONFIG_LAPACK_LIB}} -lqmckl -ltrexio" 2> /dev/null
-        if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
-           "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.f90 qmckl.mod \
-                      qmckl_constants.mod qmckl_verificarlo_f.mod
-                echo "found"
-        else
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.f90 qmckl.mod \
-                      qmckl_constants.mod qmckl_verificarlo_f.mod
-                not_found
-        fi
-}
-
-function check_f77zmq() {
-        cat > "${QP_ROOT}"/external/tmp.f90 <<'EOF'
-program main
-  use f77_zmq
-  integer :: major, minor, patch, rc
-  rc = f77_zmq_version(major, minor, patch)
-  if (rc /= 0) stop 1
-end program main
-EOF
-        eval "${CONFIG_FC} ${CONFIG_FCFLAGS} -I\"${QP_ROOT}/src/zmq\" \"${QP_ROOT}/src/zmq/f77_zmq_module.F90\" \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe ${CONFIG_LIB} -lf77zmq -lzmq -lpthread" 2> /dev/null
-        if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
-           "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.f90 f77_zmq.mod
-                echo "found"
-        else
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.f90 f77_zmq.mod
-                not_found
-        fi
-}
-
-function check_openblas() {
-        cat > "${QP_ROOT}"/external/tmp.f90 <<'EOF'
-program main
-  double precision :: a(1,1), b(1,1), c(1,1)
-  a = 2.d0
-  b = 3.d0
-  c = 0.d0
-  call dgemm('N', 'N', 1, 1, 1, 1.d0, a, 1, b, 1, 0.d0, c, 1)
-  if (abs(c(1,1) - 6.d0) > 1.d-12) stop 1
-end program main
-EOF
-        eval "${CONFIG_FC} ${CONFIG_FCFLAGS} \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe ${CONFIG_LIB} -lopenblas" 2> /dev/null
-        if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
-           "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.f90
-                echo "found"
-        else
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.f90
-                not_found
-        fi
-}
-
-function check_hdf5() {
-        local h5fc h5fc_show h5fc_flags
-        h5fc=$(find_hdf5_fortran_wrapper)
-        if [[ ${h5fc} = $(not_found) ]] ; then
-                not_found
-                return
-        fi
-        h5fc_show="$(${h5fc} -show 2> /dev/null)"
-        if [[ -z ${h5fc_show} || ${h5fc_show} != *" "* ]] ; then
-                not_found
-                return
-        fi
-        h5fc_flags="${h5fc_show#* }"
-        cat > "${QP_ROOT}"/external/tmp.f90 <<'EOF'
-program main
-  use hdf5
-  integer :: ierr
-  call h5open_f(ierr)
-  if (ierr /= 0) stop 1
-  call h5close_f(ierr)
-  if (ierr /= 0) stop 2
-end program main
-EOF
-        eval "${CONFIG_FC} ${CONFIG_FCFLAGS} \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe ${h5fc_flags}" 2> /dev/null
-        if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
-           "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.f90
-                echo "found"
-        else
-                rm -f "${QP_ROOT}"/external/tmp.exe \
-                      "${QP_ROOT}"/external/tmp.f90
-                not_found
-        fi
-}
-
-function find_dir() {
-        if [[ -d $1 ]] ; then
-                echo "$1"
-        else
-                not_found
-        fi
-}
+source "${QP_ROOT}/scripts/installation/configure_managed_checks.sh"
 
 CONFIG_CC="$(get_config_option CC)"
 CONFIG_CXX="$(get_config_option CXX)"
@@ -629,47 +410,29 @@ CONFIG_LIB="$(get_config_option LIB)"
 CONFIG_LAPACK_LIB="$(get_config_option LAPACK_LIB)"
 
 if [[ -z ${CONFIG_CC} ]] ; then
-        CONFIG_CC="${CC:-gcc}"
+    CONFIG_CC="${CC:-gcc}"
 fi
 
 if [[ -z ${CONFIG_FC} ]] ; then
-        CONFIG_FC="${FC:-gfortran}"
+    CONFIG_FC="${FC:-gfortran}"
 fi
 
 CONFIG_NAME="environment"
 if [[ -n ${CONFIG} ]] ; then
-        CONFIG_NAME="$(basename "${CONFIG}" .cfg)"
+    CONFIG_NAME="$(basename "${CONFIG}" .cfg)"
 fi
-if command -v sha256sum > /dev/null 2>&1 ; then
-        HASH_COMMAND="sha256sum"
-else
-        HASH_COMMAND="shasum -a 256"
-fi
-CONFIG_HASH="$({
-        [[ -n ${CONFIG} ]] && cat "${CONFIG}"
-        printf '%s\n' "CC=${CONFIG_CC}" "CXX=${CONFIG_CXX}" \
-                "FC=${CONFIG_FC}"
-        "${CONFIG_CC%% *}" --version 2> /dev/null || true
-        [[ -z ${CONFIG_CXX} ]] || \
-                "${CONFIG_CXX%% *}" --version 2> /dev/null || true
-        "${CONFIG_FC%% *}" --version 2> /dev/null || true
-        } | ${HASH_COMMAND} | cut -c 1-12)"
-STACK_ID="${CONFIG_NAME}-${CONFIG_HASH}"
 
 if [[ -z ${DEPENDENCY_PREFIX} ]] ; then
-        DEPENDENCY_PREFIX="${QP_ROOT}/dependencies/${STACK_ID}"
+    DEPENDENCY_PREFIX="${QP_ROOT}/dependencies/${CONFIG_NAME}"
 fi
 DEPENDENCY_PREFIX="$(mkdir -p "${DEPENDENCY_PREFIX}" && \
         cd "${DEPENDENCY_PREFIX}" && pwd -P)"
-STACK_METADATA="${DEPENDENCY_PREFIX}/.qp-managed-stack"
-if [[ -f ${STACK_METADATA} ]] ; then
-        INSTALLED_STACK_ID="$(cat "${STACK_METADATA}")"
-        if [[ ${INSTALLED_STACK_ID} != "${STACK_ID}" ]] ; then
-                error "dependency prefix belongs to ${INSTALLED_STACK_ID}, not ${STACK_ID}."
-        fi
-else
-        printf '%s\n' "${STACK_ID}" > "${STACK_METADATA}"
-fi
+cat > "${DEPENDENCY_PREFIX}/.qp-managed-config" <<EOF
+CONFIG=$(printf '%q' "${CONFIG:-}")
+CC=$(printf '%q' "${CONFIG_CC}")
+CXX=$(printf '%q' "${CONFIG_CXX}")
+FC=$(printf '%q' "${CONFIG_FC}")
+EOF
 DEPENDENCY_RC="${QP_ROOT}/etc/10.dependencies.rc"
 DEPENDENCY_SELECTION="${DEPENDENCY_PREFIX}/.qp-managed-dependencies"
 
@@ -690,90 +453,90 @@ TREXIO_RESOLVED_COMMIT=""
 QMCKL_RESOLVED_COMMIT=""
 
 if [[ -f ${DEPENDENCY_SELECTION} ]] ; then
-        source "${DEPENDENCY_SELECTION}"
+    source "${DEPENDENCY_SELECTION}"
 fi
 
 case ${TREXIO_SOURCE_REQUEST} in
-        release)
-                TREXIO_SOURCE=release
-                TREXIO_VERSION="${REQUESTED_TREXIO_VERSION}"
-                TREXIO_GIT_REF=""
-                TREXIO_RESOLVED_COMMIT=""
-                ;;
-        git)
-                TREXIO_SOURCE=git
-                TREXIO_GIT_REF="${REQUESTED_TREXIO_GIT_REF}"
-                TREXIO_RESOLVED_COMMIT=""
-                ;;
+    release)
+        TREXIO_SOURCE=release
+        TREXIO_VERSION="${REQUESTED_TREXIO_VERSION}"
+        TREXIO_GIT_REF=""
+        TREXIO_RESOLVED_COMMIT=""
+        ;;
+    git)
+        TREXIO_SOURCE=git
+        TREXIO_GIT_REF="${REQUESTED_TREXIO_GIT_REF}"
+        TREXIO_RESOLVED_COMMIT=""
+        ;;
 esac
 case ${QMCKL_SOURCE_REQUEST} in
-        release)
-                QMCKL_SOURCE=release
-                QMCKL_VERSION="${REQUESTED_QMCKL_VERSION}"
-                QMCKL_GIT_REF=""
-                QMCKL_RESOLVED_COMMIT=""
-                ;;
-        git)
-                QMCKL_SOURCE=git
-                QMCKL_GIT_REF="${REQUESTED_QMCKL_GIT_REF}"
-                QMCKL_RESOLVED_COMMIT=""
-                ;;
+    release)
+        QMCKL_SOURCE=release
+        QMCKL_VERSION="${REQUESTED_QMCKL_VERSION}"
+        QMCKL_GIT_REF=""
+        QMCKL_RESOLVED_COMMIT=""
+        ;;
+    git)
+        QMCKL_SOURCE=git
+        QMCKL_GIT_REF="${REQUESTED_QMCKL_GIT_REF}"
+        QMCKL_RESOLVED_COMMIT=""
+        ;;
 esac
 
 function package_requested() {
-        case " ${PACKAGES} " in
-                *" all "*|*" $1 "*) return 0 ;;
-                *) return 1 ;;
-        esac
+    case " ${PACKAGES} " in
+        *" all "*|*" $1 "*) return 0 ;;
+        *) return 1 ;;
+    esac
 }
 
 function resolve_git_ref() {
-        local repository=$1
-        local reference=$2
-        local resolved
+    local repository=$1
+    local reference=$2
+    local resolved
 
-        if [[ ${reference} =~ ^[0-9a-fA-F]{40}$ ]] ; then
-                echo "${reference,,}"
-                return 0
-        fi
+    if [[ ${reference} =~ ^[0-9a-fA-F]{40}$ ]] ; then
+        echo "${reference,,}"
+        return 0
+    fi
+    resolved=$(git ls-remote "${repository}" \
+                   "refs/heads/${reference}" | awk 'NR == 1 {print $1}')
+    if [[ -z ${resolved} ]] ; then
         resolved=$(git ls-remote "${repository}" \
-                "refs/heads/${reference}" | awk 'NR == 1 {print $1}')
-        if [[ -z ${resolved} ]] ; then
-                resolved=$(git ls-remote "${repository}" \
-                        "refs/tags/${reference}^{}" | \
-                        awk 'NR == 1 {print $1}')
-        fi
-        if [[ -z ${resolved} ]] ; then
-                resolved=$(git ls-remote "${repository}" \
-                        "refs/tags/${reference}" | awk 'NR == 1 {print $1}')
-        fi
-        if [[ -z ${resolved} && ${reference} = HEAD ]] ; then
-                resolved=$(git ls-remote "${repository}" HEAD | \
-                        awk 'NR == 1 {print $1}')
-        fi
-        [[ -n ${resolved} ]] || return 1
-        echo "${resolved}"
+                       "refs/tags/${reference}^{}" | \
+                       awk 'NR == 1 {print $1}')
+    fi
+    if [[ -z ${resolved} ]] ; then
+        resolved=$(git ls-remote "${repository}" \
+                       "refs/tags/${reference}" | awk 'NR == 1 {print $1}')
+    fi
+    if [[ -z ${resolved} && ${reference} = HEAD ]] ; then
+        resolved=$(git ls-remote "${repository}" HEAD | \
+                       awk 'NR == 1 {print $1}')
+    fi
+    [[ -n ${resolved} ]] || return 1
+    echo "${resolved}"
 }
 
 if [[ ${TREXIO_SOURCE} = git && -z ${EXTERNAL_TREXIO_PREFIX} ]] ; then
-        if package_requested trexio || package_requested trexio-nohdf5 ; then
-                TREXIO_RESOLVED_COMMIT=$(resolve_git_ref \
-                        https://github.com/TREX-CoE/trexio.git \
-                        "${TREXIO_GIT_REF}") || \
-                        error "unable to resolve TREXIO Git ref ${TREXIO_GIT_REF}."
-        elif [[ -z ${TREXIO_RESOLVED_COMMIT} ]] ; then
-                error "install TREXIO Git ref ${TREXIO_GIT_REF} with -i trexio."
-        fi
+    if package_requested trexio || package_requested trexio-nohdf5 ; then
+        TREXIO_RESOLVED_COMMIT=$(resolve_git_ref \
+                                     https://github.com/TREX-CoE/trexio.git \
+                                     "${TREXIO_GIT_REF}") || \
+            error "unable to resolve TREXIO Git ref ${TREXIO_GIT_REF}."
+    elif [[ -z ${TREXIO_RESOLVED_COMMIT} ]] ; then
+        error "install TREXIO Git ref ${TREXIO_GIT_REF} with -i trexio."
+    fi
 fi
 if [[ ${QMCKL_SOURCE} = git && -z ${EXTERNAL_QMCKL_PREFIX} ]] ; then
-        if package_requested qmckl ; then
-                QMCKL_RESOLVED_COMMIT=$(resolve_git_ref \
-                        https://github.com/TREX-CoE/qmckl.git \
-                        "${QMCKL_GIT_REF}") || \
-                        error "unable to resolve QMCkl Git ref ${QMCKL_GIT_REF}."
-        elif [[ -z ${QMCKL_RESOLVED_COMMIT} ]] ; then
-                error "install QMCkl Git ref ${QMCKL_GIT_REF} with -i qmckl."
-        fi
+    if package_requested qmckl ; then
+        QMCKL_RESOLVED_COMMIT=$(resolve_git_ref \
+                                    https://github.com/TREX-CoE/qmckl.git \
+                                    "${QMCKL_GIT_REF}") || \
+            error "unable to resolve QMCkl Git ref ${QMCKL_GIT_REF}."
+    elif [[ -z ${QMCKL_RESOLVED_COMMIT} ]] ; then
+        error "install QMCkl Git ref ${QMCKL_GIT_REF} with -i qmckl."
+    fi
 fi
 
 cat > "${DEPENDENCY_SELECTION}" <<EOF
@@ -788,17 +551,17 @@ QMCKL_RESOLVED_COMMIT=$(printf '%q' "${QMCKL_RESOLVED_COMMIT}")
 EOF
 
 function package_prefix() {
-        echo "${DEPENDENCY_PREFIX}/$1-$2"
+    echo "${DEPENDENCY_PREFIX}/$1-$2"
 }
 
 MANAGED_HDF5_PREFIX="$(package_prefix hdf5 "${HDF5_VERSION}")"
 TREXIO_SOURCE_ID="${TREXIO_VERSION}"
 QMCKL_SOURCE_ID="${QMCKL_VERSION}"
 if [[ ${TREXIO_SOURCE} = git ]] ; then
-        TREXIO_SOURCE_ID="git-${TREXIO_RESOLVED_COMMIT:0:12}"
+    TREXIO_SOURCE_ID="git-${TREXIO_RESOLVED_COMMIT:0:12}"
 fi
 if [[ ${QMCKL_SOURCE} = git ]] ; then
-        QMCKL_SOURCE_ID="git-${QMCKL_RESOLVED_COMMIT:0:12}"
+    QMCKL_SOURCE_ID="git-${QMCKL_RESOLVED_COMMIT:0:12}"
 fi
 MANAGED_TREXIO_PREFIX="$(package_prefix trexio "${TREXIO_SOURCE_ID}")"
 MANAGED_TREXIO_NOHDF5_PREFIX="$(package_prefix trexio \
@@ -810,48 +573,48 @@ ACTIVE_TREXIO_PREFIX="${EXTERNAL_TREXIO_PREFIX:-${MANAGED_TREXIO_PREFIX}}"
 ACTIVE_TREXIO_FALLBACK="${MANAGED_TREXIO_NOHDF5_PREFIX}"
 ACTIVE_QMCKL_PREFIX="${EXTERNAL_QMCKL_PREFIX:-${MANAGED_QMCKL_PREFIX}}"
 if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
-        MANAGED_HDF5_PREFIX=""
+    MANAGED_HDF5_PREFIX=""
 fi
 if [[ -n ${EXTERNAL_TREXIO_PREFIX} ]] ; then
-        MANAGED_TREXIO_PREFIX=""
-        MANAGED_TREXIO_NOHDF5_PREFIX=""
-        ACTIVE_TREXIO_FALLBACK=""
+    MANAGED_TREXIO_PREFIX=""
+    MANAGED_TREXIO_NOHDF5_PREFIX=""
+    ACTIVE_TREXIO_FALLBACK=""
 fi
 if [[ -n ${EXTERNAL_QMCKL_PREFIX} ]] ; then
-        MANAGED_QMCKL_PREFIX=""
+    MANAGED_QMCKL_PREFIX=""
 fi
 
 function write_dependency_rc() {
-        local config_quoted cc_quoted fc_quoted
-        local hdf5_root_quoted trexio_root_quoted trexio_fallback_quoted
-        local qmckl_root_quoted managed_hdf5_quoted
-        local managed_trexio_quoted managed_trexio_nohdf5_quoted
-        local managed_qmckl_quoted external_hdf5_quoted
-        local external_trexio_quoted external_qmckl_quoted
-        local trexio_source_quoted trexio_ref_quoted trexio_commit_quoted
-        local qmckl_source_quoted qmckl_ref_quoted qmckl_commit_quoted
-        printf -v config_quoted '%q' "${CONFIG:-}"
-        printf -v cc_quoted '%q' "${CONFIG_CC}"
-        printf -v fc_quoted '%q' "${CONFIG_FC}"
-        printf -v hdf5_root_quoted '%q' "${ACTIVE_HDF5_PREFIX}"
-        printf -v trexio_root_quoted '%q' "${ACTIVE_TREXIO_PREFIX}"
-        printf -v trexio_fallback_quoted '%q' "${ACTIVE_TREXIO_FALLBACK}"
-        printf -v qmckl_root_quoted '%q' "${ACTIVE_QMCKL_PREFIX}"
-        printf -v managed_hdf5_quoted '%q' "${MANAGED_HDF5_PREFIX}"
-        printf -v managed_trexio_quoted '%q' "${MANAGED_TREXIO_PREFIX}"
-        printf -v managed_trexio_nohdf5_quoted '%q' \
-                "${MANAGED_TREXIO_NOHDF5_PREFIX}"
-        printf -v managed_qmckl_quoted '%q' "${MANAGED_QMCKL_PREFIX}"
-        printf -v external_hdf5_quoted '%q' "${EXTERNAL_HDF5_PREFIX}"
-        printf -v external_trexio_quoted '%q' "${EXTERNAL_TREXIO_PREFIX}"
-        printf -v external_qmckl_quoted '%q' "${EXTERNAL_QMCKL_PREFIX}"
-        printf -v trexio_source_quoted '%q' "${TREXIO_SOURCE}"
-        printf -v trexio_ref_quoted '%q' "${TREXIO_GIT_REF}"
-        printf -v trexio_commit_quoted '%q' "${TREXIO_RESOLVED_COMMIT}"
-        printf -v qmckl_source_quoted '%q' "${QMCKL_SOURCE}"
-        printf -v qmckl_ref_quoted '%q' "${QMCKL_GIT_REF}"
-        printf -v qmckl_commit_quoted '%q' "${QMCKL_RESOLVED_COMMIT}"
-        cat > "${DEPENDENCY_RC}" <<EOF
+    local config_quoted cc_quoted fc_quoted
+    local hdf5_root_quoted trexio_root_quoted trexio_fallback_quoted
+    local qmckl_root_quoted managed_hdf5_quoted
+    local managed_trexio_quoted managed_trexio_nohdf5_quoted
+    local managed_qmckl_quoted external_hdf5_quoted
+    local external_trexio_quoted external_qmckl_quoted
+    local trexio_source_quoted trexio_ref_quoted trexio_commit_quoted
+    local qmckl_source_quoted qmckl_ref_quoted qmckl_commit_quoted
+    printf -v config_quoted '%q' "${CONFIG:-}"
+    printf -v cc_quoted '%q' "${CONFIG_CC}"
+    printf -v fc_quoted '%q' "${CONFIG_FC}"
+    printf -v hdf5_root_quoted '%q' "${ACTIVE_HDF5_PREFIX}"
+    printf -v trexio_root_quoted '%q' "${ACTIVE_TREXIO_PREFIX}"
+    printf -v trexio_fallback_quoted '%q' "${ACTIVE_TREXIO_FALLBACK}"
+    printf -v qmckl_root_quoted '%q' "${ACTIVE_QMCKL_PREFIX}"
+    printf -v managed_hdf5_quoted '%q' "${MANAGED_HDF5_PREFIX}"
+    printf -v managed_trexio_quoted '%q' "${MANAGED_TREXIO_PREFIX}"
+    printf -v managed_trexio_nohdf5_quoted '%q' \
+           "${MANAGED_TREXIO_NOHDF5_PREFIX}"
+    printf -v managed_qmckl_quoted '%q' "${MANAGED_QMCKL_PREFIX}"
+    printf -v external_hdf5_quoted '%q' "${EXTERNAL_HDF5_PREFIX}"
+    printf -v external_trexio_quoted '%q' "${EXTERNAL_TREXIO_PREFIX}"
+    printf -v external_qmckl_quoted '%q' "${EXTERNAL_QMCKL_PREFIX}"
+    printf -v trexio_source_quoted '%q' "${TREXIO_SOURCE}"
+    printf -v trexio_ref_quoted '%q' "${TREXIO_GIT_REF}"
+    printf -v trexio_commit_quoted '%q' "${TREXIO_RESOLVED_COMMIT}"
+    printf -v qmckl_source_quoted '%q' "${QMCKL_SOURCE}"
+    printf -v qmckl_ref_quoted '%q' "${QMCKL_GIT_REF}"
+    printf -v qmckl_commit_quoted '%q' "${QMCKL_RESOLVED_COMMIT}"
+    cat > "${DEPENDENCY_RC}" <<EOF
 # Generated by scripts/installation/configure_managed.
 # Source this file to reuse the QP dependency stack in QP or another program.
 export QP_DEPENDENCY_PREFIX="${DEPENDENCY_PREFIX}"
@@ -932,8 +695,8 @@ EOF
 }
 
 function activate_dependency_prefixes() {
-        write_dependency_rc
-        source "${DEPENDENCY_RC}"
+    write_dependency_rc
+    source "${DEPENDENCY_RC}"
 }
 
 activate_dependency_prefixes
@@ -953,602 +716,291 @@ CONFIG_HDF5_LIBS="${HDF5_LIBS:-}"
 CONFIG_HDF5_PREFIX="${EXTERNAL_HDF5_PREFIX:-${HDF5_PREFIX:-${HDF5_ROOT:-${HDF5_DIR:-}}}}"
 HDF5_CFLAGS_FROM_ENV=0
 if [[ -n ${CONFIG_HDF5_CFLAGS} ]] ; then
-        HDF5_CFLAGS_FROM_ENV=1
+    HDF5_CFLAGS_FROM_ENV=1
 fi
 HDF5_WRAPPER_HAS_INCLUDE=0
 TREXIO_H5CC_ENV=""
 if [[ -n ${CONFIG_H5CC} ]] ; then
-        TREXIO_H5CC_ENV="H5CC=\"${CONFIG_H5CC}\""
+    TREXIO_H5CC_ENV="H5CC=\"${CONFIG_H5CC}\""
 fi
 
 if [[ -n ${CONFIG_H5CC} && ( -z ${CONFIG_HDF5_CFLAGS} || -z ${CONFIG_HDF5_LIBS} ) ]] ; then
-        HDF5_SHOW="$(${CONFIG_H5CC} -show 2> /dev/null || true)"
-        if [[ -n ${HDF5_SHOW} ]] ; then
-                HDF5_SHOW_CFLAGS=""
-                HDF5_SHOW_LIBS=""
-                for arg in ${HDF5_SHOW} ; do
-                        case "${arg}" in
-                                -I*)
-                                        HDF5_WRAPPER_HAS_INCLUDE=1
-                                        HDF5_SHOW_CFLAGS="${HDF5_SHOW_CFLAGS} ${arg}"
-                                        ;;
-                                -L*|-l*|-Wl,*|*.so) HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} ${arg}" ;;
-                                *.a)
-                                        lib_dir="$(dirname "${arg}")"
-                                        lib_base="$(basename "${arg}" .a)"
-                                        lib_name="${lib_base#lib}"
-                                        if [[ -f "${lib_dir}/${lib_base}.so" ]] ; then
-                                                HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} -L${lib_dir} -l${lib_name}"
-                                        else
-                                                HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} ${arg}"
-                                        fi
-                                        ;;
-                        esac
-                done
-                CONFIG_HDF5_CFLAGS="${CONFIG_HDF5_CFLAGS:-${HDF5_SHOW_CFLAGS}}"
-                CONFIG_HDF5_LIBS="${CONFIG_HDF5_LIBS:-${HDF5_SHOW_LIBS}}"
-        fi
+    HDF5_SHOW="$(${CONFIG_H5CC} -show 2> /dev/null || true)"
+    if [[ -n ${HDF5_SHOW} ]] ; then
+        HDF5_SHOW_CFLAGS=""
+        HDF5_SHOW_LIBS=""
+        for arg in ${HDF5_SHOW} ; do
+            case "${arg}" in
+                -I*)
+                    HDF5_WRAPPER_HAS_INCLUDE=1
+                    HDF5_SHOW_CFLAGS="${HDF5_SHOW_CFLAGS} ${arg}"
+                    ;;
+                -L*|-l*|-Wl,*|*.so) HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} ${arg}" ;;
+                *.a)
+                    lib_dir="$(dirname "${arg}")"
+                    lib_base="$(basename "${arg}" .a)"
+                    lib_name="${lib_base#lib}"
+                    if [[ -f "${lib_dir}/${lib_base}.so" ]] ; then
+                        HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} -L${lib_dir} -l${lib_name}"
+                    else
+                        HDF5_SHOW_LIBS="${HDF5_SHOW_LIBS} ${arg}"
+                    fi
+                    ;;
+            esac
+        done
+        CONFIG_HDF5_CFLAGS="${CONFIG_HDF5_CFLAGS:-${HDF5_SHOW_CFLAGS}}"
+        CONFIG_HDF5_LIBS="${CONFIG_HDF5_LIBS:-${HDF5_SHOW_LIBS}}"
+    fi
 fi
 
 TREXIO_CC_ENV="${CONFIGURE_CC_ENV}"
 TREXIO_HDF5_ENV=""
 TREXIO_HDF5_WITH_ARG=""
 if [[ -n ${TREXIO_CC} ]] ; then
-        TREXIO_CC_ENV="CC=\"${TREXIO_CC}\""
+    TREXIO_CC_ENV="CC=\"${TREXIO_CC}\""
 elif [[ -n ${CONFIG_H5CC} && ${HDF5_WRAPPER_HAS_INCLUDE} = 0 && ${HDF5_CFLAGS_FROM_ENV} = 0 ]] ; then
-        TREXIO_CC_ENV="CC=\"${CONFIG_H5CC}\""
+    TREXIO_CC_ENV="CC=\"${CONFIG_H5CC}\""
 fi
 if [[ -n ${CONFIG_HDF5_CFLAGS} ]] ; then
-        TREXIO_HDF5_ENV="${TREXIO_HDF5_ENV} HDF5_CFLAGS=\"${CONFIG_HDF5_CFLAGS}\""
+    TREXIO_HDF5_ENV="${TREXIO_HDF5_ENV} HDF5_CFLAGS=\"${CONFIG_HDF5_CFLAGS}\""
 fi
 if [[ -n ${CONFIG_HDF5_LIBS} ]] ; then
-        TREXIO_HDF5_ENV="${TREXIO_HDF5_ENV} HDF5_LIBS=\"${CONFIG_HDF5_LIBS}\""
+    TREXIO_HDF5_ENV="${TREXIO_HDF5_ENV} HDF5_LIBS=\"${CONFIG_HDF5_LIBS}\""
 fi
 if [[ -n ${CONFIG_HDF5_PREFIX} ]] ; then
-        if [[ -f "${CONFIG_HDF5_PREFIX}/include/hdf5.h" ]] ; then
-                TREXIO_HDF5_WITH_ARG="--with-hdf5=\"${CONFIG_HDF5_PREFIX}\""
-        else
-                echo "Warning: ${CONFIG_HDF5_PREFIX}/include/hdf5.h not found; not passing --with-hdf5 to TREXIO."
-                echo "         Using HDF5_CFLAGS/HDF5_LIBS from the HDF5 wrapper or environment instead."
-        fi
+    if [[ -f "${CONFIG_HDF5_PREFIX}/include/hdf5.h" ]] ; then
+        TREXIO_HDF5_WITH_ARG="--with-hdf5=\"${CONFIG_HDF5_PREFIX}\""
+    else
+        echo "Warning: ${CONFIG_HDF5_PREFIX}/include/hdf5.h not found; not passing --with-hdf5 to TREXIO."
+        echo "         Using HDF5_CFLAGS/HDF5_LIBS from the HDF5 wrapper or environment instead."
+    fi
 fi
 
 echo "Dependency checks will use CC=${CONFIG_CC}"
 echo "Dependency checks will use FC=${CONFIG_FC}"
 if [[ -n ${BLAS_LIBS:-${CONFIG_LAPACK_LIB}} ]] ; then
-        echo "Dependency checks will use BLAS_LIBS=${BLAS_LIBS:-${CONFIG_LAPACK_LIB}}"
+    echo "Dependency checks will use BLAS_LIBS=${BLAS_LIBS:-${CONFIG_LAPACK_LIB}}"
 fi
 if [[ -n ${LAPACK_LIBS:-${CONFIG_LAPACK_LIB}} ]] ; then
-        echo "Dependency checks will use LAPACK_LIBS=${LAPACK_LIBS:-${CONFIG_LAPACK_LIB}}"
+    echo "Dependency checks will use LAPACK_LIBS=${LAPACK_LIBS:-${CONFIG_LAPACK_LIB}}"
 fi
 if [[ -n ${CONFIG_H5CC} ]] ; then
-        echo "TREXIO HDF5 wrapper: ${CONFIG_H5CC}"
+    echo "TREXIO HDF5 wrapper: ${CONFIG_H5CC}"
 fi
 if [[ -n ${CONFIG_HDF5_PREFIX} ]] ; then
-        echo "TREXIO HDF5 prefix: ${CONFIG_HDF5_PREFIX}"
+    echo "TREXIO HDF5 prefix: ${CONFIG_HDF5_PREFIX}"
 fi
 echo "TREXIO install will use ${TREXIO_CC_ENV}"
 if [[ ${TREXIO_SOURCE} = git ]] ; then
-        echo "TREXIO source: ${TREXIO_GIT_REF} (${TREXIO_RESOLVED_COMMIT})"
+    echo "TREXIO source: ${TREXIO_GIT_REF} (${TREXIO_RESOLVED_COMMIT})"
 else
-        echo "TREXIO source: release ${TREXIO_VERSION}"
+    echo "TREXIO source: release ${TREXIO_VERSION}"
 fi
 if [[ ${QMCKL_SOURCE} = git ]] ; then
-        echo "QMCkl source: ${QMCKL_GIT_REF} (${QMCKL_RESOLVED_COMMIT})"
+    echo "QMCkl source: ${QMCKL_GIT_REF} (${QMCKL_RESOLVED_COMMIT})"
 else
-        echo "QMCkl source: release ${QMCKL_VERSION}"
+    echo "QMCkl source: release ${QMCKL_VERSION}"
 fi
 
 # Make program believe stdin is a tty
 function faketty() {
-  script -qfc "$(printf "%q " "$@")" /dev/null
+    script -qfc "$(printf "%q " "$@")" /dev/null
 }
 
 function require_git_source_tools() {
-        local dependency=$1
-        local tool
-        local missing=""
-        for tool in git autoreconf automake python3 ; do
-                command -v "${tool}" > /dev/null 2>&1 || \
-                        missing="${missing} ${tool}"
-        done
-        if ! command -v emacs26 > /dev/null 2>&1 && \
-           ! command -v emacs > /dev/null 2>&1 ; then
-                missing="${missing} emacs"
-        fi
-        if [[ -n ${missing} ]] ; then
-                error "${dependency} Git sources require:${missing}."
-        fi
+    local dependency=$1
+    local tool
+    local missing=""
+    for tool in git autoreconf automake python3 ; do
+        command -v "${tool}" > /dev/null 2>&1 || \
+            missing="${missing} ${tool}"
+    done
+    if ! command -v emacs26 > /dev/null 2>&1 && \
+            ! command -v emacs > /dev/null 2>&1 ; then
+        missing="${missing} emacs"
+    fi
+    if [[ -n ${missing} ]] ; then
+        error "${dependency} Git sources require:${missing}."
+    fi
 }
 
 # Install IRPF90 if needed
 IRPF90=$(find_exe irpf90)
 if [[ ${IRPF90} = $(not_found) ]] ; then
-        make -C ${QP_ROOT}/external/irpf90
+    make -C ${QP_ROOT}/external/irpf90
 fi
 
 
 
 if [[ "${PACKAGES}.x" != ".x" ]] ; then
-        printf "\e[0;31m"
-        echo ""
-      echo "#########################################################"
-      echo "#                                                       #"
-      echo "#       Automatic installation of dependencies          #"
-      echo "#                                                       #"
-      echo "# USE AT YOUR OWN RISK :                                #"
-      echo "# No support will be provided by the quantum package    #"
-      echo "# developers for the installation of external software. #"
-      echo "#                                                       #"
-      echo "# You may refer to the INSTALL.rst file for help.       #"
-      echo "#                                                       #"
-      echo "#########################################################"
-        printf "\e[m"
-        echo ""
-        sleep 1
+    printf "\e[0;31m"
+    echo ""
+    echo "#########################################################"
+    echo "#                                                       #"
+    echo "#       Automatic installation of dependencies          #"
+    echo "#                                                       #"
+    echo "# USE AT YOUR OWN RISK :                                #"
+    echo "# No support will be provided by the quantum package    #"
+    echo "# developers for the installation of external software. #"
+    echo "#                                                       #"
+    echo "# You may refer to the INSTALL.rst file for help.       #"
+    echo "#                                                       #"
+    echo "#########################################################"
+    printf "\e[m"
+    echo ""
+    sleep 1
 fi
 
 if [[ ${PACKAGES} = all ]] ; then
-        BLAS_PACKAGE=""
-        HDF5_PACKAGE="hdf5"
-        TREXIO_PACKAGE="trexio"
-        QMCKL_PACKAGE="qmckl"
-        case ${CONFIG_LAPACK_LIB} in
-                *mkl*|*armpl*) ;;
-                *) BLAS_PACKAGE="openblas" ;;
-        esac
-        [[ -n ${EXTERNAL_HDF5_PREFIX} ]] && HDF5_PACKAGE=""
-        [[ -n ${EXTERNAL_TREXIO_PREFIX} ]] && TREXIO_PACKAGE=""
-        [[ -n ${EXTERNAL_QMCKL_PREFIX} ]] && QMCKL_PACKAGE=""
-        PACKAGES="cmake zlib ninja zeromq f77zmq gmp ocaml docopt resultsFile bats ${BLAS_PACKAGE} ${HDF5_PACKAGE} ${TREXIO_PACKAGE} ${QMCKL_PACKAGE} simple_gpu"
+    BLAS_PACKAGE=""
+    HDF5_PACKAGE="hdf5"
+    TREXIO_PACKAGE="trexio"
+    QMCKL_PACKAGE="qmckl"
+    case ${CONFIG_LAPACK_LIB} in
+        *mkl*|*armpl*) ;;
+        *) BLAS_PACKAGE="openblas" ;;
+    esac
+    [[ -n ${EXTERNAL_HDF5_PREFIX} ]] && HDF5_PACKAGE=""
+    [[ -n ${EXTERNAL_TREXIO_PREFIX} ]] && TREXIO_PACKAGE=""
+    [[ -n ${EXTERNAL_QMCKL_PREFIX} ]] && QMCKL_PACKAGE=""
+    PACKAGES="cmake zlib ninja zeromq f77zmq gmp ocaml docopt resultsFile bats ${BLAS_PACKAGE} ${HDF5_PACKAGE} ${TREXIO_PACKAGE} ${QMCKL_PACKAGE} simple_gpu"
 fi
 
 
-for PACKAGE in ${PACKAGES} ; do
-
-    if [[ ${PACKAGE} = hdf5 && -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
-            echo "Using external HDF5: ${EXTERNAL_HDF5_PREFIX}"
-            continue
-    elif [[ ( ${PACKAGE} = trexio || ${PACKAGE} = trexio-nohdf5 ) && \
-            -n ${EXTERNAL_TREXIO_PREFIX} ]] ; then
-            echo "Using external TREXIO: ${EXTERNAL_TREXIO_PREFIX}"
-            continue
-    elif [[ ${PACKAGE} = qmckl && -n ${EXTERNAL_QMCKL_PREFIX} ]] ; then
-            echo "Using external QMCkl: ${EXTERNAL_QMCKL_PREFIX}"
-            continue
-    fi
-
-    if [[ ${PACKAGE} = ninja ]] ; then
-
-            execute << EOF
-              rm -f "\${QP_ROOT}"/bin/ninja
-              tar -zxvf "\${QP_ROOT}"/external/qp2-dependencies/${ARCHITECTURE}/ninja.tar.gz
-              mv ninja "\${QP_ROOT}"/bin/
-EOF
-
-    elif [[ ${PACKAGE} = cmake ]] ; then
-
-            VERSION=3.31.10
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              rm -f cmake-${VERSION}-linux-${ARCHITECTURE}.sh
-              wget https://github.com/Kitware/CMake/releases/download/v${VERSION}/cmake-${VERSION}-linux-${ARCHITECTURE}.sh
-              chmod +x cmake-${VERSION}-linux-${ARCHITECTURE}.sh
-              ./cmake-${VERSION}-linux-${ARCHITECTURE}.sh --prefix=$QP_ROOT --skip-license
-EOF
-
-    elif [[ ${PACKAGE} = openblas ]] ; then
-
-            VERSION=$OPENBLAS_VERSION
-            PREFIX="$(package_prefix openblas "${VERSION}")"
-            CC_ARGS="${CONFIG_CC#${CONFIG_CC%% *}} ${CONFIG_CFLAGS}"
-            FC_ARGS="${CONFIG_FC#${CONFIG_FC%% *}} ${CONFIG_FCFLAGS}"
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              wget https://github.com/OpenMathLib/OpenBLAS/releases/download/v${VERSION}/OpenBLAS-${VERSION}.tar.gz
-              rm -rf OpenBLAS-${VERSION}
-              tar -zxf OpenBLAS-${VERSION}.tar.gz && rm OpenBLAS-${VERSION}.tar.gz
-              cd OpenBLAS-${VERSION}
-              make -j 8 CC="${CONFIG_CC%% *}" FC="${CONFIG_FC%% *}" CFLAGS="${CC_ARGS}" FFLAGS="${FC_ARGS}" USE_OPENMP=1
-              make PREFIX="${PREFIX}" install
-EOF
-            activate_dependency_prefixes
-
-    elif [[ ${PACKAGE} = hdf5 ]] ; then
-
-            VERSION=$HDF5_VERSION
-            PREFIX="$(package_prefix hdf5 "${VERSION}")"
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              wget https://github.com/HDFGroup/hdf5/releases/download/hdf5_${VERSION}/hdf5-${VERSION}.tar.gz
-              rm -rf hdf5-${VERSION}
-              tar -zxf hdf5-${VERSION}.tar.gz && rm hdf5-${VERSION}.tar.gz
-              cd hdf5-${VERSION}
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix="${PREFIX}" --enable-fortran --enable-shared || exit 1
-              (make -j 8 || make) && make check && make install
-EOF
-            activate_dependency_prefixes
-            HDF5_PREFIX="${PREFIX}"
-            H5CC="${PREFIX}/bin/h5cc"
-            CONFIG_H5CC="${H5CC}"
-            CONFIG_HDF5_PREFIX="${PREFIX}"
-            TREXIO_H5CC_ENV="H5CC=\"${H5CC}\""
-            TREXIO_HDF5_WITH_ARG="--with-hdf5=\"${PREFIX}\""
-
-    elif [[ ${PACKAGE} = trexio-nohdf5 ]] ; then
-
-            PREFIX="${MANAGED_TREXIO_NOHDF5_PREFIX}"
-            if [[ ${TREXIO_SOURCE} = git ]] ; then
-                    require_git_source_tools TREXIO
-                    SOURCE_DIR="trexio-git-${TREXIO_RESOLVED_COMMIT:0:12}"
-                    execute << EOF
-              cd "\${QP_ROOT}"/external
-              rm -rf "${SOURCE_DIR}"
-              git clone --no-checkout https://github.com/TREX-CoE/trexio.git "${SOURCE_DIR}"
-              cd "${SOURCE_DIR}"
-              git checkout --detach "${TREXIO_RESOLVED_COMMIT}"
-              ./autogen.sh
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix="${PREFIX}" --without-hdf5 || exit 1
-              (make -j 8 || make) && make check && make -j 8 install
-EOF
-            else
-                    VERSION=$TREXIO_VERSION
-                    execute << EOF
-              cd "\${QP_ROOT}"/external
-              wget https://github.com/TREX-CoE/trexio/releases/download/v${VERSION}/trexio-${VERSION}.tar.gz
-              rm -rf trexio-${VERSION}
-              tar -zxf trexio-${VERSION}.tar.gz && rm trexio-${VERSION}.tar.gz
-              cd trexio-${VERSION}
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix="${PREFIX}" --without-hdf5 || exit 1
-              (make -j 8 || make) && make check && make -j 8 install
-              tar -zxvf "\${QP_ROOT}"/external/qp2-dependencies/${ARCHITECTURE}/ninja.tar.gz
-              mv ninja "\${QP_ROOT}"/bin/
-EOF
-            fi
-            activate_dependency_prefixes
-    elif [[ ${PACKAGE} = trexio ]] ; then
-
-            PREFIX="${MANAGED_TREXIO_PREFIX}"
-            if [[ ${TREXIO_SOURCE} = git ]] ; then
-                    require_git_source_tools TREXIO
-                    SOURCE_DIR="trexio-git-${TREXIO_RESOLVED_COMMIT:0:12}"
-                    execute << EOF
-              cd "\${QP_ROOT}"/external
-              rm -rf "${SOURCE_DIR}"
-              git clone --no-checkout https://github.com/TREX-CoE/trexio.git "${SOURCE_DIR}"
-              cd "${SOURCE_DIR}"
-              git checkout --detach "${TREXIO_RESOLVED_COMMIT}"
-              ./autogen.sh
-              ${TREXIO_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${TREXIO_H5CC_ENV} ${TREXIO_HDF5_ENV} ./configure --prefix="${PREFIX}" ${TREXIO_HDF5_WITH_ARG} || exit 1
-              (make -j 8 || make) && make check && make -j 8 install
-EOF
-            else
-                    VERSION=$TREXIO_VERSION
-                    execute << EOF
-              cd "\${QP_ROOT}"/external
-              wget https://github.com/TREX-CoE/trexio/releases/download/v${VERSION}/trexio-${VERSION}.tar.gz
-              rm -rf trexio-${VERSION}
-              tar -zxf trexio-${VERSION}.tar.gz && rm trexio-${VERSION}.tar.gz
-              cd trexio-${VERSION}
-              ${TREXIO_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${TREXIO_H5CC_ENV} ${TREXIO_HDF5_ENV} ./configure --prefix="${PREFIX}" ${TREXIO_HDF5_WITH_ARG} || exit 1
-              (make -j 8 || make) && make check && make -j 8 install
-EOF
-            fi
-            activate_dependency_prefixes
-    elif [[ ${PACKAGE} = qmckl ]] ; then
-
-            PREFIX="${MANAGED_QMCKL_PREFIX}"
-            if [[ ${QMCKL_SOURCE} = git ]] ; then
-                    require_git_source_tools QMCkl
-                    SOURCE_DIR="qmckl-git-${QMCKL_RESOLVED_COMMIT:0:12}"
-                    execute << EOF
-              cd "\${QP_ROOT}"/external
-              rm -rf "${SOURCE_DIR}"
-              git clone --no-checkout https://github.com/TREX-CoE/qmckl.git "${SOURCE_DIR}"
-              cd "${SOURCE_DIR}"
-              git checkout --detach "${QMCKL_RESOLVED_COMMIT}"
-              ./autogen.sh
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_F77_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${CONFIGURE_FFLAGS_ENV} ${CONFIGURE_BLAS_ENV} ${CONFIGURE_LAPACK_ENV} ./configure --prefix="${PREFIX}" --enable-hpc --disable-doc || exit 1
-              (make -j 8 || make) && make check && make install
-EOF
-            else
-                    VERSION=$QMCKL_VERSION
-                    execute << EOF
-              cd "\${QP_ROOT}"/external
-              wget https://github.com/TREX-CoE/qmckl/releases/download/v${VERSION}/qmckl-${VERSION}.tar.gz
-              rm -rf qmckl-${VERSION}
-              tar -zxf qmckl-${VERSION}.tar.gz && rm qmckl-${VERSION}.tar.gz
-              cd qmckl-${VERSION}
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_F77_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${CONFIGURE_FFLAGS_ENV} ${CONFIGURE_BLAS_ENV} ${CONFIGURE_LAPACK_ENV} ./configure --prefix="${PREFIX}" --enable-hpc --disable-doc || exit 1
-              (make -j 8 || make) && make check && make install
-EOF
-            fi
-            activate_dependency_prefixes
-    elif [[ ${PACKAGE} = gmp ]] ; then
-
-            VERSION=6.1.2
-            PREFIX="$(package_prefix gmp "${VERSION}")"
-            GMP_TARGET=""
-            [[ ${ARCHITECTURE} = arm64Darwin ]] && GMP_TARGET="--build=aarch64-apple-darwin --host=aarch64-apple-darwin --disable-assembly"
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              rm -rf gmp-${VERSION}
-              tar --bzip2 --extract --file qp2-dependencies/gmp-6.1.2.tar.bz2
-              cd gmp-${VERSION}
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_CFLAGS_ENV} ./configure --prefix="${PREFIX}" ${GMP_TARGET} && make -j 8
-              make -j 8 install
-EOF
-            activate_dependency_prefixes
-
-    elif [[ ${PACKAGE} = zeromq ]] ; then
-
-            [[ -n ${CONFIG_CXX} ]] || error \
-              "CXX is not defined in ${CONFIG:-the selected compiler environment}." \
-              "Add CXX to the selected configuration file."
-            VERSION=$ZEROMQ_VERSION
-            PREFIX="$(package_prefix zeromq "${VERSION}")"
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              wget https://github.com/zeromq/libzmq/releases/download/v${VERSION}/zeromq-${VERSION}.tar.gz
-              rm -rf zeromq-${VERSION}
-              tar -zxf zeromq-${VERSION}.tar.gz && rm zeromq-${VERSION}.tar.gz
-              cd zeromq-${VERSION}
-              [[ "${SYSTEM}" = "Darwin" ]] && ./autogen.sh
-              ${CONFIGURE_CC_ENV} CXX="${CONFIG_CXX}" ${CONFIGURE_CFLAGS_ENV} ./configure --prefix="${PREFIX}" --without-libsodium --enable-libunwind=no
-              make -j 8
-              make install
-EOF
-            activate_dependency_prefixes
-
-
-    elif [[ ${PACKAGE} = f77zmq ]] ; then
-
-            VERSION=$F77ZMQ_VERSION
-            PREFIX="$(package_prefix f77zmq "${VERSION}")"
-            ZMQ_PREFIX="$(package_prefix zeromq "${ZEROMQ_VERSION}")"
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              rm -rf f77-zmq-${VERSION}
-              tar --gunzip --extract --file qp2-dependencies/f77-zmq-${VERSION}.tar.gz
-              cd f77-zmq-${VERSION}
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_F77_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${CONFIGURE_FFLAGS_ENV} ./configure --prefix="${PREFIX}"
-              export ZMQ_H="${ZMQ_PREFIX}/include/zmq.h"
-              make && make check && make install
-EOF
-            activate_dependency_prefixes
-
-
-    elif [[ ${PACKAGE} = ocaml ]] ; then
-
-         execute <<EOF
-            rm -rf "${QP_ROOT}"/external/opampack
-            cd "${QP_ROOT}"/external/
-            tar --gunzip --extract --file qp2-dependencies/${ARCHITECTURE}/opampack.tar.gz
-            cd "${QP_ROOT}"/external/opampack
-            ./install.sh
-            export OPAMROOT="${QP_ROOT}"/external/opampack/opamroot
-            eval \$("${QP_ROOT}"/external/opampack/opam env)
-EOF
-         source "${QP_ROOT}"/etc/ocaml.rc
-
-    elif [[ ${PACKAGE} = bse ]] ; then
-
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              tar --gunzip --extract --file qp2-dependencies/bse-v0.8.11.tar.gz
-              python3 -m pip install -e basis_set_exchange-*
-EOF
-
-    elif [[ ${PACKAGE} = zlib ]] ; then
-
-            VERSION=$ZLIB_VERSION
-            PREFIX="$(package_prefix zlib "${VERSION}")"
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              wget https://zlib.net/fossils/zlib-${VERSION}.tar.gz
-              rm -rf zlib-${VERSION}
-              tar -zxf zlib-${VERSION}.tar.gz && rm zlib-${VERSION}.tar.gz
-              cd zlib-${VERSION}/
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_CFLAGS_ENV} ./configure --prefix="${PREFIX}" && \
-              make && make install
-EOF
-            activate_dependency_prefixes
-
-
-    elif [[ ${PACKAGE} = docopt ]] ; then
-
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              tar --gunzip --extract --file qp2-dependencies/docopt-0.6.2.tar.gz
-              mv docopt-*/docopt.py "\${QP_ROOT}/external/Python"
-EOF
-
-
-    elif [[ ${PACKAGE} = resultsFile ]] ; then
-
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              tar --gunzip --extract --file qp2-dependencies/resultsFile-v2.3.tar.gz
-              rm -rf "\${QP_ROOT}/external/Python/resultsFile"
-              mv resultsFile-*/resultsFile "\${QP_ROOT}/external/Python/"
-EOF
-
-    elif [[ ${PACKAGE} = bats ]] ; then
-
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              tar -zxf qp2-dependencies/bats-v1.7.0.tar.gz
-              ( cd bats-core-1.7.0/ ; ./install.sh \${QP_ROOT})
-EOF
-
-    elif [[ ${PACKAGE} = armadillo ]] ; then
-
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              cd armadillo-code
-              #TODO
-EOF
-
-    elif [[ ${PACKAGE} = openorb ]] ; then
-
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              cd OpenOrbitalOptimizer
-              #TODO
-EOF
-    elif [[ ${PACKAGE} = simple_gpu ]] ; then
-
-            VERSION=$SIMPLE_GPU_VERSION
-            PREFIX="$(package_prefix simple_gpu "${VERSION}")"
-            execute << EOF
-              cd "\${QP_ROOT}"/external
-              wget https://github.com/scemama/simple_gpu/releases/download/v${VERSION}/simple_gpu-${VERSION}.tar.gz
-              rm -rf simple_gpu-${VERSION}
-              tar -zxf simple_gpu-${VERSION}.tar.gz && rm simple_gpu-${VERSION}.tar.gz
-              cd simple_gpu-${VERSION}
-              ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_F77_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${CONFIGURE_FFLAGS_ENV} ${CONFIGURE_BLAS_ENV} ${CONFIGURE_LAPACK_ENV} ./configure --prefix="${PREFIX}" || exit 1
-              (make -j 8 || make) && make check && make install
-EOF
-            activate_dependency_prefixes
-    else
-        error "${PACKAGE} unknown."
-        fail
-    fi
-
-
-done
+source "${QP_ROOT}/scripts/installation/configure_managed_packages.sh"
+install_requested_packages
 
 CMAKE=$(find_exe cmake)
 if [[ ${CMAKE} = $(not_found) ]] ; then
-        error "cmake (cmake) is not installed."
-        fail
+    error "cmake (cmake) is not installed."
+    fail
 fi
 
 NINJA=$(find_exe ninja)
 if [[ ${NINJA} = $(not_found) ]] ; then
-        error "ninja (ninja) is not installed."
-        fail
+    error "ninja (ninja) is not installed."
+    fail
 fi
 
 if [[ ${CONFIG_LAPACK_LIB} == *openblas* ]] || \
-   compgen -G "${DEPENDENCY_PREFIX}/openblas-*" > /dev/null ; then
-        OPENBLAS=$(check_openblas)
-        if [[ ${OPENBLAS} = $(not_found) ]] ; then
-                error "OpenBLAS is not usable with ${CONFIG_FC}."
-                fail
-        fi
+       compgen -G "${DEPENDENCY_PREFIX}/openblas-*" > /dev/null ; then
+    OPENBLAS=$(check_openblas)
+    if [[ ${OPENBLAS} = $(not_found) ]] ; then
+        error "OpenBLAS is not usable with ${CONFIG_FC}."
+        fail
+    fi
 fi
 
 if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] || \
-   compgen -G "${DEPENDENCY_PREFIX}/hdf5-*" > /dev/null ; then
-        HDF5=$(check_hdf5)
-        if [[ ${HDF5} = $(not_found) ]] ; then
-                error "HDF5 Fortran is not usable with ${CONFIG_FC}."
-                fail
-        fi
+       compgen -G "${DEPENDENCY_PREFIX}/hdf5-*" > /dev/null ; then
+    HDF5=$(check_hdf5)
+    if [[ ${HDF5} = $(not_found) ]] ; then
+        error "HDF5 Fortran is not usable with ${CONFIG_FC}."
+        fail
+    fi
 fi
 
 ZEROMQ=$(check_zeromq)
 if [[ ${ZEROMQ} = $(not_found) ]] ; then
 
-        MAKE=$(find_exe make)
-        if [[ ${MAKE} = $(not_found) ]] ; then
-                error "make is not installed."
-                fail
-        fi
-
-        M4=$(find_exe autoreconf)
-        if [[ ${M4} = $(not_found) ]] ; then
-                error "autoreconf is not installed."
-                fail
-        fi
-
-        M4=$(find_exe m4)
-        if [[ ${M4} = $(not_found) ]] ; then
-                error "m4 preprocesssor is not installed."
-                fail
-        fi
-
-        error "ZeroMQ (zeromq) is not installed."
+    MAKE=$(find_exe make)
+    if [[ ${MAKE} = $(not_found) ]] ; then
+        error "make is not installed."
         fail
+    fi
+
+    M4=$(find_exe autoreconf)
+    if [[ ${M4} = $(not_found) ]] ; then
+        error "autoreconf is not installed."
+        fail
+    fi
+
+    M4=$(find_exe m4)
+    if [[ ${M4} = $(not_found) ]] ; then
+        error "m4 preprocesssor is not installed."
+        fail
+    fi
+
+    error "ZeroMQ (zeromq) is not installed."
+    fail
 fi
 
 TREXIO=$(check_trexio)
 if [[ ${TREXIO} = $(not_found) ]] ; then
-        error "TREXIO (trexio | trexio-nohdf5) is not installed. If you don't have HDF5, use trexio-nohdf5"
-        fail
+    error "TREXIO (trexio | trexio-nohdf5) is not installed. If you don't have HDF5, use trexio-nohdf5"
+    fail
 fi
 
 QMCKL=$(check_qmckl)
 if [[ ${QMCKL} = $(not_found) ]] ; then
-        error "QMCkl (qmckl) is not installed."
-        fail
+    error "QMCkl (qmckl) is not installed."
+    fail
 fi
 
 F77ZMQ=$(check_f77zmq)
 if [[ ${F77ZMQ} = $(not_found) ]] ; then
-        error "Fortran binding of ZeroMQ (f77zmq) is not installed."
-        fail
+    error "Fortran binding of ZeroMQ (f77zmq) is not installed."
+    fail
 fi
 
 GMP=$(check_gmp)
 if [[ ${GMP} = $(not_found) ]] ; then
-        error "GMP (gmp) is not installed."
-        fail
+    error "GMP (gmp) is not installed."
+    fail
 fi
 
 OCAML=$(find_exe ocamlc)
 if [[ ${OCAML} = $(not_found) ]] ; then
-        error "OCaml (ocaml) compiler is not installed."
-        fail
+    error "OCaml (ocaml) compiler is not installed."
+    fail
 fi
 
 ZLIB=$(check_zlib)
 if [[ ${ZLIB} = $(not_found) ]] ; then
-        error "Zlib (zlib) is not installed."
-        fail
+    error "Zlib (zlib) is not installed."
+    fail
 fi
 
 DOCOPT=$(find_python_lib docopt)
 if [[ ${DOCOPT} = $(not_found) ]] ; then
-        error "docopt (docopt) is not installed."
-        fail
+    error "docopt (docopt) is not installed."
+    fail
 fi
 
 RESULTSFILE=$(find_python_lib resultsFile)
 if [[ ${RESULTSFILE} = $(not_found) ]] ; then
-        error "resultsFile (resultsFile) is not installed."
-        fail
+    error "resultsFile (resultsFile) is not installed."
+    fail
 fi
 
 SIMPLEGPU=$(check_simple_gpu)
 if [[ ${SIMPLEGPU} = $(not_found) ]] ; then
-        error "SimpleGPU (simple_gpu) is not installed."
-        fail
+    error "SimpleGPU (simple_gpu) is not installed."
+    fail
 fi
 
 echo ""
 echo "Dependency sources:"
 if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
-        printf '  %-10s external  %s\n' HDF5 "${EXTERNAL_HDF5_PREFIX}"
+    printf '  %-10s external  %s\n' HDF5 "${EXTERNAL_HDF5_PREFIX}"
 elif [[ -d ${ACTIVE_HDF5_PREFIX} ]] ; then
-        printf '  %-10s managed   %s\n' HDF5 "${ACTIVE_HDF5_PREFIX}"
+    printf '  %-10s managed   %s\n' HDF5 "${ACTIVE_HDF5_PREFIX}"
 else
-        printf '  %-10s environment\n' HDF5
+    printf '  %-10s environment\n' HDF5
 fi
 if [[ -n ${EXTERNAL_TREXIO_PREFIX} ]] ; then
-        printf '  %-10s external  %s\n' TREXIO "${EXTERNAL_TREXIO_PREFIX}"
+    printf '  %-10s external  %s\n' TREXIO "${EXTERNAL_TREXIO_PREFIX}"
 elif [[ -d ${ACTIVE_TREXIO_PREFIX} ]] ; then
-        printf '  %-10s managed   %s\n' TREXIO "${ACTIVE_TREXIO_PREFIX}"
+    printf '  %-10s managed   %s\n' TREXIO "${ACTIVE_TREXIO_PREFIX}"
 else
-        printf '  %-10s environment\n' TREXIO
+    printf '  %-10s environment\n' TREXIO
 fi
 if [[ -n ${EXTERNAL_QMCKL_PREFIX} ]] ; then
-        printf '  %-10s external  %s\n' QMCkl "${EXTERNAL_QMCKL_PREFIX}"
+    printf '  %-10s external  %s\n' QMCkl "${EXTERNAL_QMCKL_PREFIX}"
 elif [[ -d ${ACTIVE_QMCKL_PREFIX} ]] ; then
-        printf '  %-10s managed   %s\n' QMCkl "${ACTIVE_QMCKL_PREFIX}"
+    printf '  %-10s managed   %s\n' QMCkl "${ACTIVE_QMCKL_PREFIX}"
 else
-        printf '  %-10s environment\n' QMCkl
+    printf '  %-10s environment\n' QMCkl
 fi
 
 
@@ -1575,17 +1027,17 @@ printf "\e[m\n"
 
 if [[ -n $CONFIG ]] ; then
 
-        "${QP_ROOT}"/scripts/compilation/qp_create_ninja create --development "${CONFIG}"
+    "${QP_ROOT}"/scripts/compilation/qp_create_ninja create --development "${CONFIG}"
 fi
 
 if [[ -f ${QP_ROOT}/build.ninja ]] ; then
-  [[ -z ${TRAVIS} ]] && echo "You can now run ./bin/qpsh to enter in the QP shell mode :)"
+    [[ -z ${TRAVIS} ]] && echo "You can now run ./bin/qpsh to enter in the QP shell mode :)"
 else
-      echo ""
-      echo "${QP_ROOT}/build.ninja does not exist,"
-      echo "you need to specify the COMPILATION configuration file."
-      echo "See  ./configure -h  for more details."
-      echo ""
+    echo ""
+    echo "${QP_ROOT}/build.ninja does not exist,"
+    echo "you need to specify the COMPILATION configuration file."
+    echo "See  ./configure -h  for more details."
+    echo ""
 fi
 
 exit 0

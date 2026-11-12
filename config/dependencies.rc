@@ -2,7 +2,7 @@
 #
 # A non-empty GIT_REF selects a Git checkout instead of a release tarball.
 # The installer resolves branches such as master to an exact commit and records
-# that commit in the compiler-specific dependency stack.
+# that commit in the managed dependency prefix.
 
 TREXIO_VERSION=2.6.1
 TREXIO_GIT_REF=
