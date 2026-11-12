@@ -170,8 +170,7 @@ subroutine non_hrmt_bieig_degen(n, A, s_right_in, thr_d, thr_nd, leigvec, reigve
      enddo
     enddo
     ! orthogonalize the right eigenvectors by diagonalizing the S matrix
-!   call lapack_diagd(seigval,seigvec,sphichi,n_dim,n_dim)
-    call pivoted_cholesky( sphichi, n_dim, -1.d0, n_dim, seigvec)
+    call lapack_diagd(seigval,seigvec,sphichi,n_dim,n_dim)
     ! get the orthogonal eigenvectors in the big basis 
     reigvec_tmp = 0.d0
     do j = 1, n_dim
