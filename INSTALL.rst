@@ -152,15 +152,24 @@ reinstalling them:
    ./scripts/installation/configure_managed \
        -c config/cluster_gcc.cfg \
        --with-hdf5 "$HDF5_ROOT" \
+       --with-openblas "$OPENBLAS_ROOT" \
+       --with-zeromq "$ZEROMQ_ROOT" \
        --with-trexio "$TREXIO_ROOT" \
        --with-qmckl "$QMCKL_ROOT" \
        -i all
 
 Each supplied prefix is activated and checked with a real API call. It is
-omitted from :samp:`-i all`; an explicit :samp:`-i hdf5`,
-:samp:`-i trexio`, or :samp:`-i qmckl` validates the external package rather
-than replacing it. External QMCkl and TREXIO libraries must have compatible
-transitive dependencies, which the compile-and-run checks verify.
+omitted from :samp:`-i all`; an explicit installation request validates the
+external package rather than replacing it. The analogous :samp:`--with-mkl`
+option selects an external oneMKL root. OpenBLAS or MKL must match
+:samp:`LAPACK_LIB` in the compilation configuration. External QMCkl and
+TREXIO libraries must have compatible transitive dependencies, which the
+compile-and-run checks verify.
+
+Every compilation configuration used by the managed installer must define
+:samp:`CC`, :samp:`CXX`, :samp:`FC`, and :samp:`LAPACK_LIB`. Existing CMake
+is reused from :envvar:`PATH`; when it is missing, the managed copy is
+installed below the dependency prefix rather than in the QP checkout.
 
 TREXIO and QMCkl can be installed either from a release tarball or from an
 exact Git revision. The managed defaults are defined in

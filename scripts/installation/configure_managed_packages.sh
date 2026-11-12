@@ -9,6 +9,9 @@ function install_requested_packages() {
         elif [[ ${PACKAGE} = hdf5 && -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
             echo "Using external HDF5: ${EXTERNAL_HDF5_PREFIX}"
             continue
+        elif [[ ${PACKAGE} = zeromq && -n ${EXTERNAL_ZEROMQ_PREFIX} ]] ; then
+            echo "Using external ZeroMQ: ${EXTERNAL_ZEROMQ_PREFIX}"
+            continue
         elif [[ ( ${PACKAGE} = trexio || ${PACKAGE} = trexio-nohdf5 ) && \
                     -n ${EXTERNAL_TREXIO_PREFIX} ]] ; then
             echo "Using external TREXIO: ${EXTERNAL_TREXIO_PREFIX}"
@@ -28,14 +31,23 @@ EOF
 
         elif [[ ${PACKAGE} = cmake ]] ; then
 
-            VERSION=3.31.10
+            VERSION=$CMAKE_VERSION
+            if command -v cmake > /dev/null 2>&1 ; then
+                echo "Using existing CMake: $(command -v cmake)"
+                continue
+            fi
+            if [[ $(uname -s) != Linux ]] ; then
+                error "automatic CMake installation is supported only on Linux."
+            fi
             execute << EOF
               cd "\${QP_ROOT}"/external
               rm -f cmake-${VERSION}-linux-${ARCHITECTURE}.sh
               wget https://github.com/Kitware/CMake/releases/download/v${VERSION}/cmake-${VERSION}-linux-${ARCHITECTURE}.sh
               chmod +x cmake-${VERSION}-linux-${ARCHITECTURE}.sh
-              ./cmake-${VERSION}-linux-${ARCHITECTURE}.sh --prefix=$QP_ROOT --skip-license
+              mkdir -p "${MANAGED_CMAKE_PREFIX}"
+              ./cmake-${VERSION}-linux-${ARCHITECTURE}.sh --prefix="${MANAGED_CMAKE_PREFIX}" --skip-license
 EOF
+            activate_dependency_prefixes
 
         elif [[ ${PACKAGE} = openblas ]] ; then
 
@@ -101,8 +113,6 @@ EOF
               cd trexio-${VERSION}
               ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix="${PREFIX}" --without-hdf5 || exit 1
               (make -j 8 || make) && make check && make -j 8 install
-              tar -zxvf "\${QP_ROOT}"/external/qp2-dependencies/${ARCHITECTURE}/ninja.tar.gz
-              mv ninja "\${QP_ROOT}"/bin/
 EOF
             fi
             activate_dependency_prefixes
@@ -194,7 +204,7 @@ EOF
               tar -zxf zeromq-${VERSION}.tar.gz && rm zeromq-${VERSION}.tar.gz
               cd zeromq-${VERSION}
               [[ "${SYSTEM}" = "Darwin" ]] && ./autogen.sh
-              ${CONFIGURE_CC_ENV} CXX="${CONFIG_CXX}" ${CONFIGURE_CFLAGS_ENV} ./configure --prefix="${PREFIX}" --without-libsodium --enable-libunwind=no
+              ${CONFIGURE_CC_ENV} ${CONFIGURE_CXX_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_CXXFLAGS_ENV} ./configure --prefix="${PREFIX}" --without-libsodium --enable-libunwind=no
               make -j 8
               make install
 EOF
@@ -205,14 +215,18 @@ EOF
 
             VERSION=$F77ZMQ_VERSION
             PREFIX="$(package_prefix f77zmq "${VERSION}")"
-            ZMQ_PREFIX="$(package_prefix zeromq "${ZEROMQ_VERSION}")"
+            ZMQ_PREFIX="${ACTIVE_ZEROMQ_PREFIX}"
             execute << EOF
               cd "\${QP_ROOT}"/external
               rm -rf f77-zmq-${VERSION}
               tar --gunzip --extract --file qp2-dependencies/f77-zmq-${VERSION}.tar.gz
               cd f77-zmq-${VERSION}
+              if [[ -f "${ZMQ_PREFIX}/include/zmq.h" ]] ; then
+                  export ZMQ_H="${ZMQ_PREFIX}/include/zmq.h"
+              else
+                  unset ZMQ_H
+              fi
               ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_F77_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${CONFIGURE_FFLAGS_ENV} ./configure --prefix="${PREFIX}"
-              export ZMQ_H="${ZMQ_PREFIX}/include/zmq.h"
               make && make check && make install
 EOF
             activate_dependency_prefixes

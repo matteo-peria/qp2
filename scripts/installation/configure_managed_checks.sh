@@ -27,7 +27,7 @@ function find_python_lib() {
 function check_c_program() {
     eval "${CONFIG_CC} ${CONFIG_CFLAGS} \
 \"${QP_ROOT}\"/external/tmp.c -o \"${QP_ROOT}\"/external/tmp.exe \
-${CONFIG_LIB} $*" 2> /dev/null
+$* ${CONFIG_LIB}" 2> /dev/null
     if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
            "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
         rm -f "${QP_ROOT}"/external/tmp.exe \
@@ -97,7 +97,7 @@ EOF
     eval "${CONFIG_FC} ${CONFIG_FCFLAGS} \
 \"${QP_ROOT}\"/src/trexio/trexio_module.F90 \
 \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe \
-${CONFIG_LIB} -ltrexio" 2> /dev/null
+-ltrexio ${CONFIG_LIB}" 2> /dev/null
     if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
            "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
         rm -f "${QP_ROOT}"/external/tmp.exe \
@@ -125,8 +125,7 @@ EOF
     eval "${CONFIG_FC} ${CONFIG_FCFLAGS} \
 \"${QP_ROOT}\"/plugins/local/qmckl/qmckl.F90 \
 \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe \
-${CONFIG_LIB} ${BLAS_LIBS:-${CONFIG_LAPACK_LIB}} \
--lqmckl -ltrexio" 2> /dev/null
+-lqmckl -ltrexio ${ACTIVE_LAPACK_LIBS} ${CONFIG_LIB}" 2> /dev/null
     if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
            "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
         rm -f "${QP_ROOT}"/external/tmp.exe \
@@ -153,7 +152,7 @@ EOF
     eval "${CONFIG_FC} ${CONFIG_FCFLAGS} -I\"${QP_ROOT}/src/zmq\" \
 \"${QP_ROOT}/src/zmq/f77_zmq_module.F90\" \
 \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe \
-${CONFIG_LIB} -lf77zmq -lzmq -lpthread" 2> /dev/null
+-lf77zmq -lzmq -lpthread ${CONFIG_LIB}" 2> /dev/null
     if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
            "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
         rm -f "${QP_ROOT}"/external/tmp.exe \
@@ -167,12 +166,6 @@ ${CONFIG_LIB} -lf77zmq -lzmq -lpthread" 2> /dev/null
 }
 
 function check_blas_lapack() {
-    local linear_algebra_libs
-    linear_algebra_libs="${LAPACK_LIBS:-${CONFIG_LAPACK_LIB}}"
-    if [[ -n ${BLAS_LIBS:-} && \
-          ${BLAS_LIBS} != "${linear_algebra_libs}" ]] ; then
-        linear_algebra_libs="${linear_algebra_libs} ${BLAS_LIBS}"
-    fi
     cat > "${QP_ROOT}"/external/tmp.f90 <<'EOF'
 program main
   implicit none
@@ -192,7 +185,7 @@ end program main
 EOF
     eval "${CONFIG_FC} ${CONFIG_FCFLAGS} \
 \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe \
-${CONFIG_LIB} ${linear_algebra_libs}" 2> /dev/null
+${ACTIVE_LAPACK_LIBS} ${CONFIG_LIB}" 2> /dev/null
     if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
            "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
         rm -f "${QP_ROOT}"/external/tmp.exe \

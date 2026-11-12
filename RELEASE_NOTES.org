@@ -20,7 +20,8 @@
   - Point charges in the Hamiltonian
   - Removed cryptokit dependency in OCaml
   - Added an optional compiler-aware managed dependency installer with
-    release and reproducible Git-revision sources for TREXIO and QMCkl
+    isolated dependency prefixes, external-library validation, and
+    reproducible release or Git-revision sources for TREXIO and QMCkl
   - Using now standard convention in RDM
   - Added molecular properties
   - Added GTOs with complex exponent

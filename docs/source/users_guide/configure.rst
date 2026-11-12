@@ -91,14 +91,22 @@ Individual cluster-provided installations can be selected explicitly:
    ./scripts/installation/configure_managed \
        -c config/cluster_gcc.cfg \
        --with-hdf5 "$HDF5_ROOT" \
+       --with-openblas "$OPENBLAS_ROOT" \
+       --with-zeromq "$ZEROMQ_ROOT" \
        --with-trexio "$TREXIO_ROOT" \
        --with-qmckl "$QMCKL_ROOT" \
        -i all
 
-Packages supplied with :samp:`--with-hdf5`, :samp:`--with-trexio`, or
+Packages supplied with :samp:`--with-hdf5`, :samp:`--with-openblas`,
+:samp:`--with-mkl`, :samp:`--with-zeromq`, :samp:`--with-trexio`, or
 :samp:`--with-qmckl` are validated and recorded in the activation manifest,
 but omitted from managed installation. This applies both to :samp:`-i all`
-and to an explicit :samp:`-i` request for the same package.
+and to an explicit :samp:`-i` request for the same package. OpenBLAS or MKL
+must agree with :samp:`LAPACK_LIB` in the selected configuration.
+
+An existing :command:`cmake` on :envvar:`PATH` is reused. If CMake is absent,
+the pinned version is installed below the dependency prefix, never directly
+in the QP source tree.
 
 QMCkl and TREXIO may also be built directly from Git. A branch is resolved to
 an exact commit before installation, and the compiler-specific stack records
@@ -129,8 +137,9 @@ such as :envvar:`HDF5_ROOT`, :envvar:`TREXIO_ROOT`, and
 The managed installer installs libraries and tools, not the compiler itself.
 To avoid environment modules on a workstation, use directly executable,
 preferably absolute, compiler paths in a private compilation configuration.
-An external dependency prefix is stamped with its configuration and compiler
-fingerprint; use a different prefix after changing either one.
+An external dependency prefix is stamped with its compilers, flags, and
+BLAS/LAPACK configuration. Reusing it with an incompatible configuration is
+rejected before installation; use a different prefix for that toolchain.
 
 Programs using the Fortran interfaces must use the same Fortran compiler as
 the selected stack. In particular, GNU and Intel builds require separate
@@ -150,8 +159,8 @@ Choosing the compilation configuration file
 ===========================================
 
 Each file in the :file:`${QP_ROOT}/config/` directory describes how to
-compile |qp| on a given machine: the Fortran and C compilers
-(:samp:`FC` and :samp:`CC`), the BLAS/LAPACK libraries
+compile |qp| on a given machine: the Fortran, C, and C++ compilers
+(:samp:`FC`, :samp:`CC`, and :samp:`CXX`), the BLAS/LAPACK libraries
 (:samp:`LAPACK_LIB`), and the |IRPF90| options
 (:samp:`IRPF90` and :samp:`IRPF90_FLAGS`) in the ``[COMMON]`` section.
 The :samp:`MODE` option of the ``[OPTION]`` section selects one of the
