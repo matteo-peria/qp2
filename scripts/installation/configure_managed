@@ -70,6 +70,8 @@ Options:
   -g [nvidia|intel|none]  Choose GPU acceleration
   --with-hdf5 <path>      HDF5 installation prefix to pass to TREXIO when it
                           contains include/hdf5.h. Skip managed HDF5.
+  --with-openblas <path>   Use and validate an external OpenBLAS installation.
+                          Skip managed OpenBLAS, including with -i all.
   --with-mkl <path>       Use an external oneMKL root containing include/ and
                           lib/. Record its environment for QP and dependencies.
   --with-trexio <path>     Use and validate an external TREXIO installation.
@@ -218,6 +220,7 @@ function find_hdf5_fortran_wrapper() {
 PACKAGES=""
 CONFIG_FROM_COMMAND=0
 EXTERNAL_HDF5_PREFIX=""
+EXTERNAL_OPENBLAS_PREFIX=""
 EXTERNAL_MKL_PREFIX=""
 EXTERNAL_TREXIO_PREFIX=""
 EXTERNAL_QMCKL_PREFIX=""
@@ -236,6 +239,16 @@ while [[ $# -gt 0 ]] ; do
                 error "--with-hdf5 requires a path."
             fi
             EXTERNAL_HDF5_PREFIX="$1"
+            ;;
+        --with-openblas=*)
+            EXTERNAL_OPENBLAS_PREFIX="${1#*=}"
+            ;;
+        --with-openblas)
+            shift
+            if [[ -z $1 ]] ; then
+                error "--with-openblas requires a path."
+            fi
+            EXTERNAL_OPENBLAS_PREFIX="$1"
             ;;
         --with-mkl=*)
             EXTERNAL_MKL_PREFIX="${1#*=}"
@@ -380,6 +393,10 @@ if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
     EXTERNAL_HDF5_PREFIX="$(canonicalize_external_prefix HDF5 \
                 "${EXTERNAL_HDF5_PREFIX}")"
 fi
+if [[ -n ${EXTERNAL_OPENBLAS_PREFIX} ]] ; then
+    EXTERNAL_OPENBLAS_PREFIX="$(canonicalize_external_prefix OpenBLAS \
+                "${EXTERNAL_OPENBLAS_PREFIX}")"
+fi
 if [[ -n ${EXTERNAL_TREXIO_PREFIX} ]] ; then
     EXTERNAL_TREXIO_PREFIX="$(canonicalize_external_prefix TREXIO \
                 "${EXTERNAL_TREXIO_PREFIX}")"
@@ -440,6 +457,12 @@ CONFIG_FCFLAGS="$(get_config_option FCFLAGS)"
 CONFIG_LIB="$(get_config_option LIB)"
 CONFIG_LAPACK_LIB="$(get_config_option LAPACK_LIB)"
 
+if [[ -z ${CONFIG_LAPACK_LIB} ]] ; then
+    error "no BLAS/LAPACK libraries are specified by " \
+          "${CONFIG:-the environment}. Set LAPACK_LIB in the " \
+          "compilation configuration."
+fi
+
 if [[ -z ${CONFIG_CC} ]] ; then
     CONFIG_CC="${CC:-gcc}"
 fi
@@ -476,6 +499,7 @@ REQUESTED_QMCKL_VERSION="${QMCKL_VERSION}"
 REQUESTED_TREXIO_GIT_REF="${TREXIO_GIT_REF}"
 REQUESTED_QMCKL_GIT_REF="${QMCKL_GIT_REF}"
 REQUESTED_EXTERNAL_MKL_PREFIX="${EXTERNAL_MKL_PREFIX}"
+REQUESTED_EXTERNAL_OPENBLAS_PREFIX="${EXTERNAL_OPENBLAS_PREFIX}"
 
 TREXIO_SOURCE=release
 QMCKL_SOURCE=release
@@ -487,8 +511,18 @@ QMCKL_RESOLVED_COMMIT=""
 if [[ -f ${DEPENDENCY_SELECTION} ]] ; then
     source "${DEPENDENCY_SELECTION}"
 fi
+if [[ -n ${REQUESTED_EXTERNAL_OPENBLAS_PREFIX} ]] ; then
+    EXTERNAL_OPENBLAS_PREFIX="${REQUESTED_EXTERNAL_OPENBLAS_PREFIX}"
+fi
 if [[ -n ${REQUESTED_EXTERNAL_MKL_PREFIX} ]] ; then
     EXTERNAL_MKL_PREFIX="${REQUESTED_EXTERNAL_MKL_PREFIX}"
+fi
+if [[ -n ${EXTERNAL_OPENBLAS_PREFIX} ]] ; then
+    EXTERNAL_OPENBLAS_PREFIX="$(canonicalize_external_prefix OpenBLAS \
+                               "${EXTERNAL_OPENBLAS_PREFIX}")"
+    if [[ ${CONFIG_LAPACK_LIB} != *openblas* ]] ; then
+        error "--with-openblas requires LAPACK_LIB to select OpenBLAS."
+    fi
 fi
 if [[ -n ${EXTERNAL_MKL_PREFIX} ]] ; then
     EXTERNAL_MKL_PREFIX="$(canonicalize_external_prefix oneMKL \
@@ -591,6 +625,7 @@ QMCKL_SOURCE=$(printf '%q' "${QMCKL_SOURCE}")
 QMCKL_VERSION=$(printf '%q' "${QMCKL_VERSION}")
 QMCKL_GIT_REF=$(printf '%q' "${QMCKL_GIT_REF}")
 QMCKL_RESOLVED_COMMIT=$(printf '%q' "${QMCKL_RESOLVED_COMMIT}")
+EXTERNAL_OPENBLAS_PREFIX=$(printf '%q' "${EXTERNAL_OPENBLAS_PREFIX}")
 EXTERNAL_MKL_PREFIX=$(printf '%q' "${EXTERNAL_MKL_PREFIX}")
 EOF
 
@@ -599,6 +634,16 @@ function package_prefix() {
 }
 
 MANAGED_HDF5_PREFIX="$(package_prefix hdf5 "${HDF5_VERSION}")"
+MANAGED_OPENBLAS_PREFIX=""
+ACTIVE_OPENBLAS_PREFIX=""
+if [[ ${CONFIG_LAPACK_LIB} == *openblas* ]] ; then
+    MANAGED_OPENBLAS_PREFIX="$(package_prefix openblas \
+            "${OPENBLAS_VERSION}")"
+    ACTIVE_OPENBLAS_PREFIX="${MANAGED_OPENBLAS_PREFIX}"
+    if [[ -n ${EXTERNAL_OPENBLAS_PREFIX} ]] ; then
+        ACTIVE_OPENBLAS_PREFIX="${EXTERNAL_OPENBLAS_PREFIX}"
+    fi
+fi
 TREXIO_SOURCE_ID="${TREXIO_VERSION}"
 QMCKL_SOURCE_ID="${QMCKL_VERSION}"
 if [[ ${TREXIO_SOURCE} = git ]] ; then
@@ -619,6 +664,9 @@ ACTIVE_QMCKL_PREFIX="${EXTERNAL_QMCKL_PREFIX:-${MANAGED_QMCKL_PREFIX}}"
 if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
     MANAGED_HDF5_PREFIX=""
 fi
+if [[ -n ${EXTERNAL_OPENBLAS_PREFIX} ]] ; then
+    MANAGED_OPENBLAS_PREFIX=""
+fi
 if [[ -n ${EXTERNAL_TREXIO_PREFIX} ]] ; then
     MANAGED_TREXIO_PREFIX=""
     MANAGED_TREXIO_NOHDF5_PREFIX=""
@@ -633,7 +681,9 @@ function write_dependency_rc() {
     local hdf5_root_quoted trexio_root_quoted trexio_fallback_quoted
     local qmckl_root_quoted managed_hdf5_quoted
     local managed_trexio_quoted managed_trexio_nohdf5_quoted
-    local managed_qmckl_quoted external_hdf5_quoted external_mkl_quoted
+    local managed_qmckl_quoted managed_openblas_quoted
+    local active_openblas_quoted
+    local external_hdf5_quoted external_openblas_quoted external_mkl_quoted
     local external_trexio_quoted external_qmckl_quoted
     local trexio_source_quoted trexio_ref_quoted trexio_commit_quoted
     local qmckl_source_quoted qmckl_ref_quoted qmckl_commit_quoted
@@ -649,7 +699,10 @@ function write_dependency_rc() {
     printf -v managed_trexio_nohdf5_quoted '%q' \
            "${MANAGED_TREXIO_NOHDF5_PREFIX}"
     printf -v managed_qmckl_quoted '%q' "${MANAGED_QMCKL_PREFIX}"
+    printf -v managed_openblas_quoted '%q' "${MANAGED_OPENBLAS_PREFIX}"
+    printf -v active_openblas_quoted '%q' "${ACTIVE_OPENBLAS_PREFIX}"
     printf -v external_hdf5_quoted '%q' "${EXTERNAL_HDF5_PREFIX}"
+    printf -v external_openblas_quoted '%q' "${EXTERNAL_OPENBLAS_PREFIX}"
     printf -v external_mkl_quoted '%q' "${EXTERNAL_MKL_PREFIX}"
     printf -v external_trexio_quoted '%q' "${EXTERNAL_TREXIO_PREFIX}"
     printf -v external_qmckl_quoted '%q' "${EXTERNAL_QMCKL_PREFIX}"
@@ -691,8 +744,7 @@ qp_dep_set_root F77ZMQ_ROOT \
   "\${QP_DEPENDENCY_PREFIX}/f77zmq-${F77ZMQ_VERSION}"
 qp_dep_set_root GMP_ROOT \
   "\${QP_DEPENDENCY_PREFIX}/gmp-6.1.2"
-qp_dep_set_root OPENBLAS_ROOT \
-  "\${QP_DEPENDENCY_PREFIX}/openblas-${OPENBLAS_VERSION}"
+qp_dep_set_root OPENBLAS_ROOT ${active_openblas_quoted}
 qp_dep_set_root HDF5_ROOT ${hdf5_root_quoted}
 if [[ -d ${trexio_root_quoted} ]] ; then
   export TREXIO_ROOT=${trexio_root_quoted}
@@ -709,13 +761,14 @@ for qp_dep_prefix in \
   "\${QP_DEPENDENCY_PREFIX}/zeromq-${ZEROMQ_VERSION}" \
   "\${QP_DEPENDENCY_PREFIX}/f77zmq-${F77ZMQ_VERSION}" \
   "\${QP_DEPENDENCY_PREFIX}/gmp-6.1.2" \
-  "\${QP_DEPENDENCY_PREFIX}/openblas-${OPENBLAS_VERSION}" \
+  ${managed_openblas_quoted} \
   ${managed_hdf5_quoted} \
   ${managed_trexio_nohdf5_quoted} \
   ${managed_trexio_quoted} \
   ${managed_qmckl_quoted} \
   "\${QP_DEPENDENCY_PREFIX}/simple_gpu-${SIMPLE_GPU_VERSION}" \
   ${external_hdf5_quoted} \
+  ${external_openblas_quoted} \
   ${external_mkl_quoted} \
   ${external_trexio_quoted} \
   ${external_qmckl_quoted} ; do
@@ -926,14 +979,25 @@ if [[ ${PACKAGES} = all ]] ; then
     TREXIO_PACKAGE="trexio"
     QMCKL_PACKAGE="qmckl"
     case ${CONFIG_LAPACK_LIB} in
-        *mkl*|*armpl*) ;;
-        *) BLAS_PACKAGE="openblas" ;;
+        *openblas*) BLAS_PACKAGE="openblas" ;;
     esac
+    [[ -n ${EXTERNAL_OPENBLAS_PREFIX} ]] && BLAS_PACKAGE=""
     [[ -n ${EXTERNAL_HDF5_PREFIX} ]] && HDF5_PACKAGE=""
     [[ -n ${EXTERNAL_TREXIO_PREFIX} ]] && TREXIO_PACKAGE=""
     [[ -n ${EXTERNAL_QMCKL_PREFIX} ]] && QMCKL_PACKAGE=""
-    PACKAGES="cmake zlib ninja zeromq f77zmq gmp ocaml docopt resultsFile bats ${BLAS_PACKAGE} ${HDF5_PACKAGE} ${TREXIO_PACKAGE} ${QMCKL_PACKAGE} simple_gpu"
+    PACKAGES="cmake zlib ninja zeromq f77zmq gmp ocaml docopt "
+    PACKAGES+="resultsFile bats ${BLAS_PACKAGE} ${HDF5_PACKAGE} "
+    PACKAGES+="${TREXIO_PACKAGE} ${QMCKL_PACKAGE} simple_gpu"
 fi
+
+case " ${PACKAGES} " in
+    *" openblas "*)
+        if [[ ${CONFIG_LAPACK_LIB} != *openblas* ]] ; then
+            error "cannot install OpenBLAS when LAPACK_LIB selects " \
+                  "another backend."
+        fi
+        ;;
+esac
 
 
 source "${QP_ROOT}/scripts/installation/configure_managed_packages.sh"
@@ -951,13 +1015,11 @@ if [[ ${NINJA} = $(not_found) ]] ; then
     fail
 fi
 
-if [[ ${CONFIG_LAPACK_LIB} == *openblas* ]] || \
-       compgen -G "${DEPENDENCY_PREFIX}/openblas-*" > /dev/null ; then
-    OPENBLAS=$(check_openblas)
-    if [[ ${OPENBLAS} = $(not_found) ]] ; then
-        error "OpenBLAS is not usable with ${CONFIG_FC}."
-        fail
-    fi
+BLAS_LAPACK=$(check_blas_lapack)
+if [[ ${BLAS_LAPACK} = $(not_found) ]] ; then
+    error "the BLAS/LAPACK libraries in LAPACK_LIB are not usable " \
+          "with ${CONFIG_FC}."
+    fail
 fi
 
 if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] || \
@@ -1050,6 +1112,19 @@ fi
 
 echo ""
 echo "Dependency sources:"
+if [[ ${CONFIG_LAPACK_LIB} == *openblas* ]] ; then
+    if [[ -n ${EXTERNAL_OPENBLAS_PREFIX} ]] ; then
+        printf '  %-10s external  %s\n' BLAS/LAPACK \
+               "${EXTERNAL_OPENBLAS_PREFIX}"
+    elif [[ -d ${ACTIVE_OPENBLAS_PREFIX} ]] ; then
+        printf '  %-10s managed   %s\n' BLAS/LAPACK \
+               "${ACTIVE_OPENBLAS_PREFIX}"
+    else
+        printf '  %-10s environment\n' BLAS/LAPACK
+    fi
+else
+    printf '  %-10s configured %s\n' BLAS/LAPACK "${CONFIG_LAPACK_LIB}"
+fi
 if [[ -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
     printf '  %-10s external  %s\n' HDF5 "${EXTERNAL_HDF5_PREFIX}"
 elif [[ -d ${ACTIVE_HDF5_PREFIX} ]] ; then

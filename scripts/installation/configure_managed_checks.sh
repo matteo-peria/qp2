@@ -166,20 +166,33 @@ ${CONFIG_LIB} -lf77zmq -lzmq -lpthread" 2> /dev/null
     fi
 }
 
-function check_openblas() {
+function check_blas_lapack() {
+    local linear_algebra_libs
+    linear_algebra_libs="${LAPACK_LIBS:-${CONFIG_LAPACK_LIB}}"
+    if [[ -n ${BLAS_LIBS:-} && \
+          ${BLAS_LIBS} != "${linear_algebra_libs}" ]] ; then
+        linear_algebra_libs="${linear_algebra_libs} ${BLAS_LIBS}"
+    fi
     cat > "${QP_ROOT}"/external/tmp.f90 <<'EOF'
 program main
-  double precision :: a(1,1), b(1,1), c(1,1)
-  a = 2.d0
-  b = 3.d0
+  implicit none
+  double precision :: a(2,2), b(2,2), c(2,2), work(8), w(2)
+  integer :: info
+  a = reshape((/ 2.d0, 0.d0, 0.d0, 3.d0 /), shape(a))
+  b = 0.d0
+  b(1,1) = 1.d0
+  b(2,2) = 1.d0
   c = 0.d0
-  call dgemm('N', 'N', 1, 1, 1, 1.d0, a, 1, b, 1, 0.d0, c, 1)
-  if (abs(c(1,1) - 6.d0) > 1.d-12) stop 1
+  call dgemm('N', 'N', 2, 2, 2, 1.d0, a, 2, b, 2, 0.d0, c, 2)
+  if (maxval(abs(c - a)) > 1.d-12) stop 1
+  call dsyev('N', 'U', 2, a, 2, w, work, size(work), info)
+  if (info /= 0) stop 2
+  if (maxval(abs(w - (/ 2.d0, 3.d0 /))) > 1.d-12) stop 3
 end program main
 EOF
     eval "${CONFIG_FC} ${CONFIG_FCFLAGS} \
 \"${QP_ROOT}\"/external/tmp.f90 -o \"${QP_ROOT}\"/external/tmp.exe \
-${CONFIG_LIB} -lopenblas" 2> /dev/null
+${CONFIG_LIB} ${linear_algebra_libs}" 2> /dev/null
     if [[ -x "${QP_ROOT}"/external/tmp.exe ]] && \
            "${QP_ROOT}"/external/tmp.exe 2> /dev/null ; then
         rm -f "${QP_ROOT}"/external/tmp.exe \

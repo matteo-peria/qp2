@@ -3,7 +3,10 @@
 function install_requested_packages() {
     for PACKAGE in ${PACKAGES} ; do
 
-        if [[ ${PACKAGE} = hdf5 && -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
+        if [[ ${PACKAGE} = openblas && -n ${EXTERNAL_OPENBLAS_PREFIX} ]] ; then
+            echo "Using external OpenBLAS: ${EXTERNAL_OPENBLAS_PREFIX}"
+            continue
+        elif [[ ${PACKAGE} = hdf5 && -n ${EXTERNAL_HDF5_PREFIX} ]] ; then
             echo "Using external HDF5: ${EXTERNAL_HDF5_PREFIX}"
             continue
         elif [[ ( ${PACKAGE} = trexio || ${PACKAGE} = trexio-nohdf5 ) && \
