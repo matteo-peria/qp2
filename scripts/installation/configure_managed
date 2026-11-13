@@ -143,7 +143,7 @@ function execute () {
     sleep 1
     echo ""
     printf "\e[0;94m"
-    ( eval "set -e ; set -x ; $_command set +x" )
+    ( set -e ; set -x ; eval "${_command}" )
     _status=$?
     printf "\e[m"
     echo ""
