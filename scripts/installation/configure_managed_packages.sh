@@ -29,6 +29,21 @@ function install_requested_packages() {
               mv ninja "\${QP_ROOT}"/bin/
 EOF
 
+        elif [[ ${PACKAGE} = autoconf ]] ; then
+
+            VERSION=$AUTOCONF_VERSION
+            PREFIX="$(package_prefix autoconf "${VERSION}")"
+            execute << EOF
+              cd "\${QP_ROOT}"/external
+              wget https://ftp.gnu.org/gnu/autoconf/autoconf-${VERSION}.tar.gz
+              rm -rf autoconf-${VERSION}
+              tar -zxf autoconf-${VERSION}.tar.gz && rm autoconf-${VERSION}.tar.gz
+              cd autoconf-${VERSION}
+              ./configure --prefix="${PREFIX}"
+              make -j 8 && make check && make install
+EOF
+            activate_dependency_prefixes
+
         elif [[ ${PACKAGE} = cmake ]] ; then
 
             VERSION=$CMAKE_VERSION

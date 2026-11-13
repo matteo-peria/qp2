@@ -16,6 +16,7 @@ DEFAULT_QMCKL_VERSION="${QMCKL_VERSION:-}"
 DEFAULT_CMAKE_VERSION="${CMAKE_VERSION:-}"
 DEFAULT_TREXIO_GIT_REF="${TREXIO_GIT_REF:-}"
 DEFAULT_QMCKL_GIT_REF="${QMCKL_GIT_REF:-}"
+DEFAULT_AUTOCONF_VERSION="${AUTOCONF_VERSION:-}"
 DEFAULT_HDF5_VERSION="${HDF5_VERSION:-}"
 DEFAULT_OPENBLAS_VERSION="${OPENBLAS_VERSION:-}"
 DEFAULT_ZEROMQ_VERSION="${ZEROMQ_VERSION:-}"
@@ -32,6 +33,7 @@ QMCKL_VERSION="${DEFAULT_QMCKL_VERSION:-${QMCKL_VERSION}}"
 CMAKE_VERSION="${DEFAULT_CMAKE_VERSION:-${CMAKE_VERSION}}"
 TREXIO_GIT_REF="${DEFAULT_TREXIO_GIT_REF:-${TREXIO_GIT_REF:-}}"
 QMCKL_GIT_REF="${DEFAULT_QMCKL_GIT_REF:-${QMCKL_GIT_REF:-}}"
+AUTOCONF_VERSION="${DEFAULT_AUTOCONF_VERSION:-${AUTOCONF_VERSION}}"
 HDF5_VERSION="${DEFAULT_HDF5_VERSION:-${HDF5_VERSION}}"
 OPENBLAS_VERSION="${DEFAULT_OPENBLAS_VERSION:-${OPENBLAS_VERSION}}"
 ZEROMQ_VERSION="${DEFAULT_ZEROMQ_VERSION:-${ZEROMQ_VERSION}}"
@@ -40,7 +42,7 @@ ZLIB_VERSION="${DEFAULT_ZLIB_VERSION:-${ZLIB_VERSION}}"
 SIMPLE_GPU_VERSION="${DEFAULT_SIMPLE_GPU_VERSION:-${SIMPLE_GPU_VERSION}}"
 
 if [[ -z ${TREXIO_VERSION} || -z ${QMCKL_VERSION} || \
-          -z ${CMAKE_VERSION} || \
+          -z ${AUTOCONF_VERSION} || -z ${CMAKE_VERSION} || \
           -z ${HDF5_VERSION} || -z ${OPENBLAS_VERSION} || \
           -z ${ZEROMQ_VERSION} || -z ${F77ZMQ_VERSION} || \
           -z ${ZLIB_VERSION} || -z ${SIMPLE_GPU_VERSION} ]] ; then
@@ -632,7 +634,7 @@ unset compiler
 
 for package in ${PACKAGES} ; do
     case "${package}" in
-        all|armadillo|bats|bse|cmake|docopt|f77zmq|gmp|ninja|ocaml|\
+        all|armadillo|autoconf|bats|bse|cmake|docopt|f77zmq|gmp|ninja|ocaml|\
         openblas|openorb|qmckl|resultsFile|simple_gpu|trexio|\
         trexio-nohdf5|zeromq|zlib) ;;
         *) error "unknown package ${package}; use -h for help." ;;
@@ -705,6 +707,28 @@ function resolve_git_ref() {
     echo "${resolved}"
 }
 
+function version_at_least() {
+    local actual=$1
+    local required=$2
+    [[ -n ${actual} ]] || return 1
+    [[ "$(printf '%s\n%s\n' "${required}" "${actual}" | sort -V | head -n 1)" = \
+        "${required}" ]]
+}
+
+function autoconf_version() {
+    local executable version
+    executable=$(command -v autoconf 2> /dev/null) || return 1
+    version=$(${executable} --version 2> /dev/null | \
+        sed -n '1s/.*) //p')
+    printf '%s\n' "${version}"
+}
+
+function autoconf_is_usable() {
+    local version
+    version=$(autoconf_version) || return 1
+    version_at_least "${version}" "${AUTOCONF_VERSION}"
+}
+
 if [[ ${TREXIO_SOURCE} = git && -z ${EXTERNAL_TREXIO_PREFIX} ]] ; then
     if package_requested trexio || package_requested trexio-nohdf5 ; then
         TREXIO_RESOLVED_COMMIT=$(resolve_git_ref \
@@ -724,6 +748,13 @@ if [[ ${QMCKL_SOURCE} = git && -z ${EXTERNAL_QMCKL_PREFIX} ]] ; then
     elif [[ -z ${QMCKL_RESOLVED_COMMIT} ]] ; then
         error "install QMCkl Git ref ${QMCKL_GIT_REF} with -i qmckl."
     fi
+fi
+
+AUTOCONF_PACKAGE=""
+if { [[ ${TREXIO_SOURCE} = git && -z ${EXTERNAL_TREXIO_PREFIX} ]] || \
+     [[ ${QMCKL_SOURCE} = git && -z ${EXTERNAL_QMCKL_PREFIX} ]]; } && \
+     ! autoconf_is_usable ; then
+    AUTOCONF_PACKAGE="autoconf"
 fi
 
 # Persist only after local and remote configuration validation succeeds.
@@ -782,6 +813,7 @@ function package_prefix() {
     echo "${DEPENDENCY_PREFIX}/$1-$2"
 }
 
+MANAGED_AUTOCONF_PREFIX="$(package_prefix autoconf "${AUTOCONF_VERSION}")"
 MANAGED_CMAKE_PREFIX="$(package_prefix cmake "${CMAKE_VERSION}")"
 MANAGED_HDF5_PREFIX="$(package_prefix hdf5 "${HDF5_VERSION}")"
 MANAGED_ZEROMQ_PREFIX="$(package_prefix zeromq "${ZEROMQ_VERSION}")"
@@ -834,7 +866,7 @@ fi
 function write_dependency_rc() {
     local config_quoted cc_quoted cxx_quoted fc_quoted
     local cflags_quoted fcflags_quoted lapack_quoted
-    local cmake_quoted hdf5_root_quoted zeromq_root_quoted
+    local autoconf_quoted cmake_quoted hdf5_root_quoted zeromq_root_quoted
     local trexio_root_quoted trexio_fallback_quoted qmckl_root_quoted
     local managed_hdf5_quoted managed_zeromq_quoted
     local managed_trexio_quoted managed_trexio_nohdf5_quoted
@@ -851,6 +883,7 @@ function write_dependency_rc() {
     printf -v cflags_quoted '%q' "${CONFIG_CFLAGS}"
     printf -v fcflags_quoted '%q' "${CONFIG_FCFLAGS}"
     printf -v lapack_quoted '%q' "${ACTIVE_LAPACK_LIBS}"
+    printf -v autoconf_quoted '%q' "${MANAGED_AUTOCONF_PREFIX}"
     printf -v cmake_quoted '%q' "${MANAGED_CMAKE_PREFIX}"
     printf -v hdf5_root_quoted '%q' "${ACTIVE_HDF5_PREFIX}"
     printf -v zeromq_root_quoted '%q' "${ACTIVE_ZEROMQ_PREFIX}"
@@ -936,7 +969,7 @@ if [[ -n \${QP_ACTIVE_ROOT:-} && \${QP_ACTIVE_ROOT} != "\${QP_ROOT}" ]] ; then
     done
 fi
 
-unset ZLIB_ROOT ZMQ_ROOT F77ZMQ_ROOT GMP_ROOT OPENBLAS_ROOT HDF5_ROOT
+unset AUTOCONF_ROOT ZLIB_ROOT ZMQ_ROOT F77ZMQ_ROOT GMP_ROOT OPENBLAS_ROOT HDF5_ROOT
 unset TREXIO_ROOT QMCKL_ROOT SIMPLE_GPU_ROOT MKLROOT BLAS_LIBS LAPACK_LIBS
 export BLAS_LIBS=${lapack_quoted}
 export LAPACK_LIBS=${lapack_quoted}
@@ -951,6 +984,7 @@ qp_dep_set_root() {
 }
 qp_dep_set_root ZLIB_ROOT \
     "\${QP_DEPENDENCY_PREFIX}/zlib-${ZLIB_VERSION}"
+qp_dep_set_root AUTOCONF_ROOT ${autoconf_quoted}
 qp_dep_set_root ZMQ_ROOT ${zeromq_root_quoted}
 qp_dep_set_root F77ZMQ_ROOT \
     "\${QP_DEPENDENCY_PREFIX}/f77zmq-${F77ZMQ_VERSION}"
@@ -970,6 +1004,7 @@ unset -f qp_dep_set_root
 
 qp_dep_active_prefixes=""
 for qp_dep_prefix in \
+    ${autoconf_quoted} \
     ${cmake_quoted} \
     "\${QP_DEPENDENCY_PREFIX}/zlib-${ZLIB_VERSION}" \
     ${managed_zeromq_quoted} \
@@ -1154,6 +1189,7 @@ function faketty() {
 function require_git_source_tools() {
     local dependency=$1
     local tool
+    local installed_autoconf
     local missing=""
     for tool in git autoreconf automake python3 ; do
         command -v "${tool}" > /dev/null 2>&1 || \
@@ -1162,6 +1198,10 @@ function require_git_source_tools() {
     if ! command -v emacs26 > /dev/null 2>&1 && \
             ! command -v emacs > /dev/null 2>&1 ; then
         missing="${missing} emacs"
+    fi
+    installed_autoconf=$(autoconf_version || true)
+    if ! version_at_least "${installed_autoconf}" "${AUTOCONF_VERSION}" ; then
+        missing="${missing} autoconf>=${AUTOCONF_VERSION}"
     fi
     if [[ -n ${missing} ]] ; then
         error "${dependency} Git sources require:${missing}."
@@ -1214,9 +1254,15 @@ if [[ ${PACKAGES} = all ]] ; then
     [[ -n ${EXTERNAL_ZEROMQ_PREFIX} ]] && ZEROMQ_PACKAGE=""
     [[ -n ${EXTERNAL_TREXIO_PREFIX} ]] && TREXIO_PACKAGE=""
     [[ -n ${EXTERNAL_QMCKL_PREFIX} ]] && QMCKL_PACKAGE=""
-    PACKAGES="cmake zlib ninja ${ZEROMQ_PACKAGE} f77zmq gmp ocaml docopt "
+    PACKAGES="cmake zlib ninja ${AUTOCONF_PACKAGE} ${ZEROMQ_PACKAGE} "
+    PACKAGES+="f77zmq gmp ocaml docopt "
     PACKAGES+="resultsFile bats ${BLAS_PACKAGE} ${HDF5_PACKAGE} "
     PACKAGES+="${TREXIO_PACKAGE} ${QMCKL_PACKAGE} simple_gpu"
+fi
+
+if [[ -n ${AUTOCONF_PACKAGE} && ${PACKAGES} != all && \
+      " ${PACKAGES} " != *" autoconf "* ]] ; then
+    PACKAGES="${AUTOCONF_PACKAGE} ${PACKAGES}"
 fi
 
 case " ${PACKAGES} " in

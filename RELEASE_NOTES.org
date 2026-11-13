@@ -24,6 +24,7 @@
     reproducible release or Git-revision sources for TREXIO and QMCkl
   - Preserve tracked EZFIO metadata when cleaning generated configuration
     files
+  - Manage Autoconf for Git-based TREXIO and QMCkl installations
   - Using now standard convention in RDM
   - Added molecular properties
   - Added GTOs with complex exponent
