@@ -1,0 +1,10 @@
+rule compile_history
+  command = gfortran -O0 -g -fcheck=all -Wall -Wextra -J. -c $in -o $out
+
+rule link_test
+  command = gfortran -O0 -g -fcheck=all -Wall -Wextra -I. $in -llapack -lblas -o $out
+
+build diis_history.o: compile_history ../diis_history.f90
+build test_diis_history: link_test diis_history.o test_diis_history.f90
+
+default test_diis_history
