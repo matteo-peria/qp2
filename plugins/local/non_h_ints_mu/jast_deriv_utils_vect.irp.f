@@ -149,6 +149,113 @@ end
 
 ! ---
 
+subroutine get_grad1_u12_withsq_qmckl_block(ipoint_first, n_grid1, n_grid2, resx, resy, resz, res)
+
+  BEGIN_DOC
+  ! QMCkl gradient for a contiguous block of r1 grid points.
+  ! The shared QMCkl context is updated once, outside OpenMP regions.
+  END_DOC
+
+  use qmckl
+
+  implicit none
+  integer,          intent(in)  :: ipoint_first, n_grid1, n_grid2
+  double precision, intent(out) :: resx(n_grid2,n_grid1), resy(n_grid2,n_grid1)
+  double precision, intent(out) :: resz(n_grid2,n_grid1), res (n_grid2,n_grid1)
+
+  integer                       :: i_grid1, ipoint, jpoint
+  integer*8                     :: k, n_points
+  double precision              :: dx, dy, dz, fac_en
+  double precision, allocatable :: rij(:,:,:), gl(:,:,:)
+  integer(qmckl_exit_code)      :: rc
+
+  PROVIDE qmckl_ctx_jastrow
+  PROVIDE elec_num
+  PROVIDE final_grid_points final_grid_points_extra
+
+  n_points = int(n_grid1,8) * int(n_grid2,8)
+  allocate(rij(3,2,n_points), gl(2,4,n_points))
+
+  k = 0_8
+  do i_grid1 = 1, n_grid1
+    ipoint = ipoint_first + i_grid1 - 1
+    do jpoint = 1, n_grid2
+      k = k + 1_8
+      rij(1:3,1,k) = final_grid_points      (1:3,ipoint)
+      rij(1:3,2,k) = final_grid_points_extra(1:3,jpoint)
+    enddo
+  enddo
+
+  rc = qmckl_set_electron_coord(qmckl_ctx_jastrow, 'N', n_points, rij, 6_8*n_points)
+  if(rc /= QMCKL_SUCCESS) then
+    print *, irp_here, 'qmckl error in set_electron_coord'
+    rc = qmckl_check(qmckl_ctx_jastrow, rc)
+    stop -1
+  endif
+
+  rc = qmckl_get_jastrow_champ_factor_ee_gl(qmckl_ctx_jastrow, gl, 8_8*n_points)
+  if(rc /= QMCKL_SUCCESS) then
+    print *, irp_here, 'qmckl error in fact_ee_gl'
+    rc = qmckl_check(qmckl_ctx_jastrow, rc)
+    stop -1
+  endif
+
+  k = 0_8
+  do i_grid1 = 1, n_grid1
+    do jpoint = 1, n_grid2
+      k = k + 1_8
+      resx(jpoint,i_grid1) = gl(1,1,k)
+      resy(jpoint,i_grid1) = gl(1,2,k)
+      resz(jpoint,i_grid1) = gl(1,3,k)
+    enddo
+  enddo
+
+  rc = qmckl_get_jastrow_champ_factor_een_gl(qmckl_ctx_jastrow, gl, 8_8*n_points)
+  if(rc /= QMCKL_SUCCESS) then
+    print *, irp_here, 'qmckl error in fact_een_gl'
+    rc = qmckl_check(qmckl_ctx_jastrow, rc)
+    stop -1
+  endif
+
+  k = 0_8
+  do i_grid1 = 1, n_grid1
+    do jpoint = 1, n_grid2
+      k = k + 1_8
+      resx(jpoint,i_grid1) = resx(jpoint,i_grid1) + gl(1,1,k)
+      resy(jpoint,i_grid1) = resy(jpoint,i_grid1) + gl(1,2,k)
+      resz(jpoint,i_grid1) = resz(jpoint,i_grid1) + gl(1,3,k)
+    enddo
+  enddo
+
+  rc = qmckl_get_jastrow_champ_factor_en_gl(qmckl_ctx_jastrow, gl, 8_8*n_points)
+  if(rc /= QMCKL_SUCCESS) then
+    print *, irp_here, 'qmckl error in fact_en_gl'
+    rc = qmckl_check(qmckl_ctx_jastrow, rc)
+    stop -1
+  endif
+
+  fac_en = 1.d0 / dble(elec_num - 1)
+  k = 0_8
+  do i_grid1 = 1, n_grid1
+    do jpoint = 1, n_grid2
+      k = k + 1_8
+      dx = resx(jpoint,i_grid1) + fac_en * gl(1,1,k)
+      dy = resy(jpoint,i_grid1) + fac_en * gl(1,2,k)
+      dz = resz(jpoint,i_grid1) + fac_en * gl(1,3,k)
+      resx(jpoint,i_grid1) = dx
+      resy(jpoint,i_grid1) = dy
+      resz(jpoint,i_grid1) = dz
+      res (jpoint,i_grid1) = dx*dx + dy*dy + dz*dz
+    enddo
+  enddo
+
+  deallocate(rij, gl)
+
+  return
+end
+
+! ---
+
 subroutine grad1_j12_r1_seq(r1, n_grid2, gradx, grady, gradz)
 
   BEGIN_DOC
