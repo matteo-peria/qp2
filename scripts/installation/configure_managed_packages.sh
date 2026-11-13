@@ -216,16 +216,16 @@ EOF
             VERSION=$F77ZMQ_VERSION
             PREFIX="$(package_prefix f77zmq "${VERSION}")"
             ZMQ_PREFIX="${ACTIVE_ZEROMQ_PREFIX}"
+            if [[ -f "${ZMQ_PREFIX}/include/zmq.h" ]] ; then
+                export ZMQ_H="${ZMQ_PREFIX}/include/zmq.h"
+            else
+                unset ZMQ_H
+            fi
             execute << EOF
               cd "\${QP_ROOT}"/external
               rm -rf f77-zmq-${VERSION}
               tar --gunzip --extract --file qp2-dependencies/f77-zmq-${VERSION}.tar.gz
               cd f77-zmq-${VERSION}
-              if [[ -f "${ZMQ_PREFIX}/include/zmq.h" ]] ; then
-                  export ZMQ_H="${ZMQ_PREFIX}/include/zmq.h"
-              else
-                  unset ZMQ_H
-              fi
               ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_F77_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${CONFIGURE_FFLAGS_ENV} ./configure --prefix="${PREFIX}"
               make && make check && make install
 EOF
