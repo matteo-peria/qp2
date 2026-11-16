@@ -9,18 +9,23 @@ subroutine rh_tcscf_diis()
   type(diis_history)          :: history
   integer                        :: info, inserted_slot, it
   integer                        :: history_count
+  integer, parameter             :: max_level_shift_tries = 5
+  integer                        :: n_retry
   logical                        :: converged
   double precision               :: etc_tot, etc_1e, etc_2e, etc_3e
   double precision               :: e_save, e_delta
   double precision               :: level_shift_save, rate_th
   double precision               :: t0, t1
   double precision               :: er_DIIS, er_delta, er_save
+  double precision               :: best_residual, trial_residual
   double precision               :: rcond
   double precision, allocatable  :: coefficients(:)
   double precision, allocatable  :: fock_before_diis(:,:)
   double precision, allocatable  :: fock_extrapolated(:,:)
   double precision, allocatable  :: mo_r_coef_save(:,:)
   double precision, allocatable  :: mo_l_coef_save(:,:)
+  double precision, allocatable  :: mo_r_coef_best(:,:)
+  double precision, allocatable  :: mo_l_coef_best(:,:)
 
   logical, external              :: qp_stop
 
@@ -33,6 +38,8 @@ subroutine rh_tcscf_diis()
 
   allocate(mo_r_coef_save(ao_num,mo_num))
   allocate(mo_l_coef_save(ao_num,mo_num))
+  allocate(mo_r_coef_best(ao_num,mo_num))
+  allocate(mo_l_coef_best(ao_num,mo_num))
   allocate(fock_before_diis(ao_num,ao_num))
   allocate(fock_extrapolated(ao_num,ao_num))
   mo_l_coef_save = 0.d0
@@ -88,6 +95,10 @@ subroutine rh_tcscf_diis()
 
     ! This snapshot is independent of whether the current pair is inserted.
     fock_before_diis(:,:) = Fock_matrix_tc_ao_tot(:,:)
+    ! A level-shift retry must restart from the orbitals entering this step.
+    mo_l_coef_save(1:ao_num,1:mo_num) = mo_l_coef(1:ao_num,1:mo_num)
+    mo_r_coef_save(1:ao_num,1:mo_num) = mo_r_coef(1:ao_num,1:mo_num)
+    level_shift_save = level_shift_TCSCF
     inserted_slot = 0
     rcond = 0.d0
 
@@ -140,13 +151,22 @@ subroutine rh_tcscf_diis()
     endif
 
     er_delta = maxval(abs(FQS_SQF_mo)) - er_save
+    best_residual = maxval(abs(FQS_SQF_mo))
+    mo_l_coef_best(1:ao_num,1:mo_num) = mo_l_coef(1:ao_num,1:mo_num)
+    mo_r_coef_best(1:ao_num,1:mo_num) = mo_r_coef(1:ao_num,1:mo_num)
 
-    mo_l_coef_save(1:ao_num,1:mo_num) = mo_l_coef(1:ao_num,1:mo_num)
-    mo_r_coef_save(1:ao_num,1:mo_num) = mo_r_coef(1:ao_num,1:mo_num)
-
-    do while((er_delta > rate_th * er_save) .and. (it > 1))
+    n_retry = 0
+    if((er_delta > rate_th * er_save) .and. (it > 1)) then
       print *, ' big or bad step '
       print *, er_delta, rate_th * er_save
+
+      ! Discard entries belonging to the step that just failed, once.
+      call diis_reset(history)
+    endif
+
+    do while((er_delta > rate_th * er_save) .and. (it > 1) .and. &
+             (n_retry < max_level_shift_tries))
+      n_retry += 1
 
       mo_l_coef(1:ao_num,1:mo_num) = &
         mo_l_coef_save(1:ao_num,1:mo_num)
@@ -165,17 +185,36 @@ subroutine rh_tcscf_diis()
         fock_tc_reigvec_ao(1:ao_num,1:mo_num)
       TOUCH mo_l_coef mo_r_coef
 
-      er_delta = maxval(abs(FQS_SQF_mo)) - er_save
-
-      if(level_shift_TCSCF - level_shift_save > 40.d0) then
-        level_shift_TCSCF = level_shift_save * 4.d0
-        SOFT_TOUCH level_shift_TCSCF
-        exit
+      trial_residual = maxval(abs(FQS_SQF_mo))
+      if(trial_residual < best_residual) then
+        best_residual = trial_residual
+        mo_l_coef_best(1:ao_num,1:mo_num) = mo_l_coef(1:ao_num,1:mo_num)
+        mo_r_coef_best(1:ao_num,1:mo_num) = mo_r_coef(1:ao_num,1:mo_num)
       endif
+      er_delta = trial_residual - er_save
 
-      call diis_reset(history)
     enddo
 
+    ! The TC retry criterion is the residual, so keep its best trial instead
+    ! of blindly accepting the last level-shifted orbital pair.
+    if(n_retry > 0) then
+      mo_l_coef(1:ao_num,1:mo_num) = mo_l_coef_best(1:ao_num,1:mo_num)
+      mo_r_coef(1:ao_num,1:mo_num) = mo_r_coef_best(1:ao_num,1:mo_num)
+      TOUCH mo_l_coef mo_r_coef
+      er_delta = maxval(abs(FQS_SQF_mo)) - er_save
+    endif
+
+    if((n_retry == max_level_shift_tries) .and. &
+       (er_delta > rate_th * er_save)) then
+      print *, ' TC-SCF level-shift retry limit reached: ', n_retry
+    endif
+
+    ! Retries use temporary shifts. Keep the existing per-iteration shift
+    ! decay, but do not let a trial shift leak into the next SCF step.
+    if(n_retry > 0) then
+      level_shift_TCSCF = level_shift_save
+      SOFT_TOUCH level_shift_TCSCF
+    endif
     level_shift_TCSCF = level_shift_TCSCF * 0.5d0
     SOFT_TOUCH level_shift_TCSCF
 
@@ -188,7 +227,6 @@ subroutine rh_tcscf_diis()
     er_delta = er_DIIS - er_save
 
     e_save           = etc_tot
-    level_shift_save = level_shift_TCSCF
     er_save          = er_DIIS
 
     converged = er_DIIS .lt. dsqrt(thresh_tcscf)
@@ -246,6 +284,7 @@ subroutine rh_tcscf_diis()
   call write_time(6)
 
   deallocate(mo_r_coef_save, mo_l_coef_save)
+  deallocate(mo_r_coef_best, mo_l_coef_best)
   deallocate(fock_before_diis, fock_extrapolated)
 
   call ezfio_set_tc_scf_tcscf_energy(TC_HF_energy)
