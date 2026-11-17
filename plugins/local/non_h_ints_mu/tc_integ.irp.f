@@ -70,13 +70,13 @@ BEGIN_PROVIDER [double precision, int2_grad1_u12_ao, (ao_num, ao_num, n_points_f
         enddo
         !$OMP END DO
         !$OMP END PARALLEL
-        call total_memory(mem)
-        mem      = max(1.d0, qp_max_mem - mem)
-        n_double = mem * 1.d8
         if(j2e_type .eq. "Qmckl") then
-          ! Four result and fourteen explicit QMCkl scratch doubles per pair.
-          n_blocks = int(min(n_double / (n_points_extra_final_grid * 18.d0), 1.d0*n_points_final_grid))
+          ! Keep QMCkl pair arrays bounded without a call for every r1 point.
+          n_blocks = min(32, n_points_final_grid)
         else
+          call total_memory(mem)
+          mem      = max(1.d0, qp_max_mem - mem)
+          n_double = mem * 1.d8
           n_blocks = int(min(n_double / (n_points_extra_final_grid * 4.d0), 1.d0*n_points_final_grid))
         endif
         n_blocks = max(1, n_blocks)
@@ -294,13 +294,13 @@ BEGIN_PROVIDER [double precision, int2_grad1_u12_square_ao, (ao_num, ao_num, n_p
       enddo
       !$OMP END DO
       !$OMP END PARALLEL
-      call total_memory(mem)
-      mem      = max(1.d0, qp_max_mem - mem)
-      n_double = mem * 1.d8
       if(j2e_type .eq. "Qmckl") then
-        ! Four result and fourteen explicit QMCkl scratch doubles per pair.
-        n_blocks = int(min(n_double / (n_points_extra_final_grid * 18.d0), 1.d0*n_points_final_grid))
+        ! Keep QMCkl pair arrays bounded without a call for every r1 point.
+        n_blocks = min(32, n_points_final_grid)
       else
+        call total_memory(mem)
+        mem      = max(1.d0, qp_max_mem - mem)
+        n_double = mem * 1.d8
         n_blocks = int(min(n_double / (n_points_extra_final_grid * 4.d0), 1.d0*n_points_final_grid))
       endif
       n_blocks = max(1, n_blocks)
