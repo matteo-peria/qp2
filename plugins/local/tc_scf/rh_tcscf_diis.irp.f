@@ -127,9 +127,9 @@ subroutine rh_tcscf_diis()
     endif
 
     mo_l_coef(1:ao_num,1:mo_num) = &
-      fock_tc_leigvec_ao(1:ao_num,1:mo_num)
+      fock_tc_leigvec_ao_balanced(1:ao_num,1:mo_num)
     mo_r_coef(1:ao_num,1:mo_num) = &
-      fock_tc_reigvec_ao(1:ao_num,1:mo_num)
+      fock_tc_reigvec_ao_balanced(1:ao_num,1:mo_num)
     TOUCH mo_l_coef mo_r_coef
 
     er_delta = maxval(abs(FQS_SQF_mo)) - er_save
@@ -144,9 +144,9 @@ subroutine rh_tcscf_diis()
       TOUCH Fock_matrix_tc_mo_tot fock_matrix_tc_diag_mo_tot
 
       mo_l_coef(1:ao_num,1:mo_num) = &
-        fock_tc_leigvec_ao(1:ao_num,1:mo_num)
+        fock_tc_leigvec_ao_balanced(1:ao_num,1:mo_num)
       mo_r_coef(1:ao_num,1:mo_num) = &
-        fock_tc_reigvec_ao(1:ao_num,1:mo_num)
+        fock_tc_reigvec_ao_balanced(1:ao_num,1:mo_num)
       TOUCH mo_l_coef mo_r_coef
     endif
 
@@ -180,9 +180,9 @@ subroutine rh_tcscf_diis()
       TOUCH mo_l_coef mo_r_coef level_shift_TCSCF
 
       mo_l_coef(1:ao_num,1:mo_num) = &
-        fock_tc_leigvec_ao(1:ao_num,1:mo_num)
+        fock_tc_leigvec_ao_balanced(1:ao_num,1:mo_num)
       mo_r_coef(1:ao_num,1:mo_num) = &
-        fock_tc_reigvec_ao(1:ao_num,1:mo_num)
+        fock_tc_reigvec_ao_balanced(1:ao_num,1:mo_num)
       TOUCH mo_l_coef mo_r_coef
 
       trial_residual = maxval(abs(FQS_SQF_mo))
