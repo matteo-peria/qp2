@@ -492,13 +492,13 @@ subroutine pg_family_fill(nsel, np, mask)
   if (mtot /= np) then
     ! Called from a parallel region: one writer at a time for the two
     ! messages and the shared error flag.
-    !$OMP CRITICAL(pg_label_msg)
+    !$OMP CRITICAL(pg_label_lock)
     write(6,'(A,I0,A,I0,A)') 'symmetry_det: family enumeration produced ', &
          mtot, ' members where the size was ', np, ' (internal inconsistency)'
     write(pg_label_msg,'(A,I0,A,I0,A)') 'family enumeration produced ', mtot, &
          ' members where the size was ', np, ' (internal inconsistency)'
     pg_label_ierr = 5
-    !$OMP END CRITICAL(pg_label_msg)
+    !$OMP END CRITICAL(pg_label_lock)
     mask(1:2,1:pg_n_mo_block,1:np) = 0
     return
   endif
@@ -665,7 +665,7 @@ subroutine pg_fam_setup(np, nsel, mask, npart, nfull, fsec, psec, pn, pos, xrow,
       if (n > pg_det_nmax) then
         ! Called from a parallel region: one writer at a time for the four
         ! lines and the shared error flag.
-        !$OMP CRITICAL(pg_label_msg)
+        !$OMP CRITICAL(pg_label_lock)
         write(6,'(A,I0,A)') 'symmetry_det: one symmetry block contributes ', &
              n, ' occupied MOs; family enumeration supports at most 12.'
         write(6,'(A)') '  A block is one irrep (at most 5 MOs) unless the MO '// &
@@ -675,7 +675,7 @@ subroutine pg_fam_setup(np, nsel, mask, npart, nfull, fsec, psec, pn, pos, xrow,
         write(pg_label_msg,'(A,I0,A)') 'one symmetry block holds ', n, &
              ' occupied MOs (at most 12 supported)'
         pg_label_ierr = 6
-        !$OMP END CRITICAL(pg_label_msg)
+        !$OMP END CRITICAL(pg_label_lock)
         npart = -1
         return
       endif
@@ -735,13 +735,13 @@ subroutine pg_fam_setup(np, nsel, mask, npart, nfull, fsec, psec, pn, pos, xrow,
   if (msum /= np .or. nfound /= npart) then
     ! Called from a parallel region: one writer at a time for the two
     ! lines and the shared error flag.
-    !$OMP CRITICAL(pg_label_msg)
+    !$OMP CRITICAL(pg_label_lock)
     write(6,'(A,I0,A)') 'symmetry_det: the sector radices do not '// &
          'decompose a family of ', np, ' members (internal inconsistency)'
     write(pg_label_msg,'(A,I0,A)') 'the sector radices do not decompose '// &
          'a family of ', np, ' members (internal inconsistency)'
     pg_label_ierr = 7
-    !$OMP END CRITICAL(pg_label_msg)
+    !$OMP END CRITICAL(pg_label_lock)
     npart = -1
     return
   endif
