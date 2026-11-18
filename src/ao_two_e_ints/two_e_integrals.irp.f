@@ -498,8 +498,47 @@ BEGIN_PROVIDER [ double precision, ao_two_e_integral_schwartz, (ao_num, ao_num) 
       !$OMP SCHEDULE(dynamic)
   do i=ao_num,1,-1
     do k=1,i
-      ao_two_e_integral_schwartz(i,k) = dsqrt(ao_two_e_integral(i,i,k,k))
+      ! Schwartz factor sqrt((ik|ik)): (ik|ik) is the self-energy of
+      ! the product gaussian i*k, so sqrt((ik|ik)*(jl|jl)) is the
+      ! rigorous Cauchy-Schwarz bound on |(ik|jl)|, the integral
+      ! screened by ao_two_e_integral_zero. Same factor as in the
+      ! erf matrix (providers_ao_erf.irp.f); the former cross
+      ! pairing sqrt((ii|kk)*(jj|ll)) decays as 1/R and never
+      ! triggers at ao_integrals_threshold = 1e-15.
+      ao_two_e_integral_schwartz(i,k) = dsqrt(ao_two_e_integral(i,k,i,k))
       ao_two_e_integral_schwartz(k,i) = ao_two_e_integral_schwartz(i,k)
+    enddo
+  enddo
+  !$OMP END PARALLEL DO
+
+END_PROVIDER
+
+! ---
+
+BEGIN_PROVIDER [ double precision, ao_two_e_integral_schwartz_cgtos, (ao_num, ao_num) ]
+
+  BEGIN_DOC
+  !  sqrt( (ik|ik) ): Cauchy-Schwarz factors |(ik|jl)| <= sqrt( (ik|ik) (jl|jl) ),
+  !  used for the screening of the cGTO integrals.
+  !  The diagonal integrals are summed over all primitive quartets: the
+  !  primitive Schwarz skip of ao_2e_cgtos_schwartz_accel uses an absolute
+  !  threshold and would set the small (ik|ik) to zero.
+  !  dabs: a vanishing diagonal integral can be negative by rounding.
+  END_DOC
+
+  implicit none
+  integer          :: i, k
+  double precision, external :: ao_two_e_integral_cgtos_prim
+
+  !$OMP PARALLEL DO PRIVATE(i,k)                                     &
+      !$OMP DEFAULT(NONE)                                            &
+      !$OMP SHARED (ao_num,ao_two_e_integral_schwartz_cgtos)        &
+      !$OMP SCHEDULE(dynamic)
+  do i=ao_num,1,-1
+    do k=1,i
+      ao_two_e_integral_schwartz_cgtos(i,k) = dsqrt(dabs(                &
+          ao_two_e_integral_cgtos_prim(i,k,i,k)))
+      ao_two_e_integral_schwartz_cgtos(k,i) = ao_two_e_integral_schwartz_cgtos(i,k)
     enddo
   enddo
   !$OMP END PARALLEL DO
