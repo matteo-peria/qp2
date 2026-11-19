@@ -68,10 +68,12 @@ Options:
                     in "${QP_ROOT}/config/". The selected file is remembered
                     in "${CONFIG_STATE_FILE}".
   -h                Print the HELP message
-  -i <package>      INSTALL <package>. Use at your OWN RISK:
+  -i <package>      INSTALL the selected package(s). Use at your OWN RISK:
                     no support will be provided for the installation of
-                    dependencies. When -c is omitted, the remembered
-                    configuration file is reused when available.
+                    dependencies. A package-only install skips full-stack
+                    validation and QP build configuration. Use -i all to
+                    install and validate the complete stack. When -c is
+                    omitted, the remembered configuration is reused.
   -g [amd|nvidia|intel|none]  Choose GPU acceleration
   --with-hdf5 <path>      HDF5 installation prefix to pass to TREXIO when it
                           contains include/hdf5.h. Skip managed HDF5.
@@ -644,6 +646,11 @@ unset package
 if [[ ${PACKAGES} != all && " ${PACKAGES} " = *" all "* ]] ; then
     error "the all package cannot be combined with another -i package."
 fi
+REQUESTED_PACKAGES="${PACKAGES}"
+PACKAGE_ONLY=0
+if [[ -n ${REQUESTED_PACKAGES} && ${REQUESTED_PACKAGES} != all ]] ; then
+    PACKAGE_ONLY=1
+fi
 
 case ${TREXIO_SOURCE_REQUEST} in
     release)
@@ -729,31 +736,27 @@ function autoconf_is_usable() {
     version_at_least "${version}" "${AUTOCONF_VERSION}"
 }
 
-if [[ ${TREXIO_SOURCE} = git && -z ${EXTERNAL_TREXIO_PREFIX} ]] ; then
-    if package_requested trexio || package_requested trexio-nohdf5 ; then
-        TREXIO_RESOLVED_COMMIT=$(resolve_git_ref \
-                                     https://github.com/TREX-CoE/trexio.git \
-                                     "${TREXIO_GIT_REF}") || \
-            error "unable to resolve TREXIO Git ref ${TREXIO_GIT_REF}."
-    elif [[ -z ${TREXIO_RESOLVED_COMMIT} ]] ; then
-        error "install TREXIO Git ref ${TREXIO_GIT_REF} with -i trexio."
-    fi
+if [[ ${TREXIO_SOURCE} = git && -z ${EXTERNAL_TREXIO_PREFIX} ]] && \
+        { package_requested trexio || package_requested trexio-nohdf5 || \
+          -z ${PACKAGES}; } ; then
+    TREXIO_RESOLVED_COMMIT=$(resolve_git_ref \
+                                 https://github.com/TREX-CoE/trexio.git \
+                                 "${TREXIO_GIT_REF}") || \
+        error "unable to resolve TREXIO Git ref ${TREXIO_GIT_REF}."
 fi
-if [[ ${QMCKL_SOURCE} = git && -z ${EXTERNAL_QMCKL_PREFIX} ]] ; then
-    if package_requested qmckl ; then
-        QMCKL_RESOLVED_COMMIT=$(resolve_git_ref \
-                                    https://github.com/TREX-CoE/qmckl.git \
-                                    "${QMCKL_GIT_REF}") || \
-            error "unable to resolve QMCkl Git ref ${QMCKL_GIT_REF}."
-    elif [[ -z ${QMCKL_RESOLVED_COMMIT} ]] ; then
-        error "install QMCkl Git ref ${QMCKL_GIT_REF} with -i qmckl."
-    fi
+if [[ ${QMCKL_SOURCE} = git && -z ${EXTERNAL_QMCKL_PREFIX} ]] && \
+        { package_requested qmckl || -z ${PACKAGES}; } ; then
+    QMCKL_RESOLVED_COMMIT=$(resolve_git_ref \
+                                https://github.com/TREX-CoE/qmckl.git \
+                                "${QMCKL_GIT_REF}") || \
+        error "unable to resolve QMCkl Git ref ${QMCKL_GIT_REF}."
 fi
 
 AUTOCONF_PACKAGE=""
-if { [[ ${TREXIO_SOURCE} = git && -z ${EXTERNAL_TREXIO_PREFIX} ]] || \
-     [[ ${QMCKL_SOURCE} = git && -z ${EXTERNAL_QMCKL_PREFIX} ]]; } && \
-     ! autoconf_is_usable ; then
+if { [[ ${TREXIO_SOURCE} = git && -z ${EXTERNAL_TREXIO_PREFIX} ]] && \
+         { package_requested trexio || package_requested trexio-nohdf5; } || \
+     [[ ${QMCKL_SOURCE} = git && -z ${EXTERNAL_QMCKL_PREFIX} ]] && \
+         package_requested qmckl; } && ! autoconf_is_usable ; then
     AUTOCONF_PACKAGE="autoconf"
 fi
 
@@ -1276,7 +1279,31 @@ esac
 
 
 source "${QP_ROOT}/scripts/installation/configure_managed_packages.sh"
+
+cat > "${DEPENDENCY_SELECTION}" <<EOF
+TREXIO_SOURCE=$(printf '%q' "${TREXIO_SOURCE}")
+TREXIO_VERSION=$(printf '%q' "${TREXIO_VERSION}")
+TREXIO_GIT_REF=$(printf '%q' "${TREXIO_GIT_REF}")
+TREXIO_RESOLVED_COMMIT=$(printf '%q' "${TREXIO_RESOLVED_COMMIT}")
+QMCKL_SOURCE=$(printf '%q' "${QMCKL_SOURCE}")
+QMCKL_VERSION=$(printf '%q' "${QMCKL_VERSION}")
+QMCKL_GIT_REF=$(printf '%q' "${QMCKL_GIT_REF}")
+QMCKL_RESOLVED_COMMIT=$(printf '%q' "${QMCKL_RESOLVED_COMMIT}")
+EXTERNAL_HDF5_PREFIX=$(printf '%q' "${EXTERNAL_HDF5_PREFIX}")
+EXTERNAL_OPENBLAS_PREFIX=$(printf '%q' "${EXTERNAL_OPENBLAS_PREFIX}")
+EXTERNAL_MKL_PREFIX=$(printf '%q' "${EXTERNAL_MKL_PREFIX}")
+EXTERNAL_TREXIO_PREFIX=$(printf '%q' "${EXTERNAL_TREXIO_PREFIX}")
+EXTERNAL_QMCKL_PREFIX=$(printf '%q' "${EXTERNAL_QMCKL_PREFIX}")
+EXTERNAL_ZEROMQ_PREFIX=$(printf '%q' "${EXTERNAL_ZEROMQ_PREFIX}")
+EOF
+
 install_requested_packages
+
+if [[ ${PACKAGE_ONLY} = 1 ]] ; then
+    echo "Requested package(s) installed; full-stack validation and QP " \
+         "build configuration were skipped."
+    exit 0
+fi
 
 CMAKE=$(find_exe cmake)
 if [[ ${CMAKE} = $(not_found) ]] ; then
@@ -1385,22 +1412,6 @@ if [[ ${SIMPLEGPU} = $(not_found) ]] ; then
     fail
 fi
 
-cat > "${DEPENDENCY_SELECTION}" <<EOF
-TREXIO_SOURCE=$(printf '%q' "${TREXIO_SOURCE}")
-TREXIO_VERSION=$(printf '%q' "${TREXIO_VERSION}")
-TREXIO_GIT_REF=$(printf '%q' "${TREXIO_GIT_REF}")
-TREXIO_RESOLVED_COMMIT=$(printf '%q' "${TREXIO_RESOLVED_COMMIT}")
-QMCKL_SOURCE=$(printf '%q' "${QMCKL_SOURCE}")
-QMCKL_VERSION=$(printf '%q' "${QMCKL_VERSION}")
-QMCKL_GIT_REF=$(printf '%q' "${QMCKL_GIT_REF}")
-QMCKL_RESOLVED_COMMIT=$(printf '%q' "${QMCKL_RESOLVED_COMMIT}")
-EXTERNAL_HDF5_PREFIX=$(printf '%q' "${EXTERNAL_HDF5_PREFIX}")
-EXTERNAL_OPENBLAS_PREFIX=$(printf '%q' "${EXTERNAL_OPENBLAS_PREFIX}")
-EXTERNAL_MKL_PREFIX=$(printf '%q' "${EXTERNAL_MKL_PREFIX}")
-EXTERNAL_TREXIO_PREFIX=$(printf '%q' "${EXTERNAL_TREXIO_PREFIX}")
-EXTERNAL_QMCKL_PREFIX=$(printf '%q' "${EXTERNAL_QMCKL_PREFIX}")
-EXTERNAL_ZEROMQ_PREFIX=$(printf '%q' "${EXTERNAL_ZEROMQ_PREFIX}")
-EOF
 DEPENDENCY_RC="${FINAL_DEPENDENCY_RC}"
 activate_dependency_prefixes
 rm -f "${STAGED_DEPENDENCY_RC}"
