@@ -755,7 +755,7 @@ fi
 AUTOCONF_PACKAGE=""
 AUTOCONF_BIN_DIR=""
 if autoconf_is_usable ; then
-    AUTOCONF_BIN_DIR="$(dirname "$(command -v autoconf)")"
+    AUTOCONF_BIN_DIR="$(cd "$(dirname "$(command -v autoconf)")" && pwd -P)"
 fi
 if { [[ ${TREXIO_SOURCE} = git && -z ${EXTERNAL_TREXIO_PREFIX} ]] && \
          { package_requested trexio || package_requested trexio-nohdf5; } || \
