@@ -753,6 +753,10 @@ if [[ ${QMCKL_SOURCE} = git && -z ${EXTERNAL_QMCKL_PREFIX} ]] && \
 fi
 
 AUTOCONF_PACKAGE=""
+AUTOCONF_BIN_DIR=""
+if autoconf_is_usable ; then
+    AUTOCONF_BIN_DIR="$(dirname "$(command -v autoconf)")"
+fi
 if { [[ ${TREXIO_SOURCE} = git && -z ${EXTERNAL_TREXIO_PREFIX} ]] && \
          { package_requested trexio || package_requested trexio-nohdf5; } || \
      [[ ${QMCKL_SOURCE} = git && -z ${EXTERNAL_QMCKL_PREFIX} ]] && \
@@ -1081,6 +1085,12 @@ function activate_dependency_prefixes() {
 write_dependency_rc
 source "${QP_ROOT}"/quantum_package.rc
 source "${DEPENDENCY_RC}"
+if [[ -n ${AUTOCONF_BIN_DIR} ]] ; then
+    case ":${PATH:-}:" in
+        *":${AUTOCONF_BIN_DIR}:"*) ;;
+        *) export PATH="${AUTOCONF_BIN_DIR}:${PATH:-}" ;;
+    esac
+fi
 
 CONFIGURE_CC_ENV="CC=\"${CONFIG_CC}\""
 CONFIGURE_CXX_ENV="CXX=\"${CONFIG_CXX}\""
