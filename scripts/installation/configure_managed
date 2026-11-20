@@ -530,7 +530,11 @@ validate_dependency_prefix
 FINAL_DEPENDENCY_RC="${QP_ROOT}/etc/10.dependencies.rc"
 STAGED_DEPENDENCY_RC="${DEPENDENCY_PREFIX}/.qp-managed-active.rc"
 DEPENDENCY_RC="${STAGED_DEPENDENCY_RC}"
-trap 'rm -f "${STAGED_DEPENDENCY_RC}"' EXIT
+trap 'rm -f "${STAGED_DEPENDENCY_RC}"; \
+      if [[ -n ${CLEAN_EMACS_BIN_DIR:-} ]] ; then \
+          rm -f "${CLEAN_EMACS_BIN_DIR}/emacs"; \
+          rmdir "${CLEAN_EMACS_BIN_DIR}" 2> /dev/null || true; \
+      fi' EXIT
 DEPENDENCY_SELECTION="${DEPENDENCY_PREFIX}/.qp-managed-dependencies"
 
 CONFIG_TREXIO_VERSION="${TREXIO_VERSION}"
@@ -1218,6 +1222,17 @@ function require_git_source_tools() {
     fi
     if [[ -n ${missing} ]] ; then
         error "${dependency} Git sources require:${missing}."
+    fi
+    if [[ -z ${CLEAN_EMACS_BIN_DIR:-} ]] ; then
+        local emacs_executable emacs_quoted
+        emacs_executable=$(command -v emacs26 || command -v emacs)
+        CLEAN_EMACS_BIN_DIR=$(mktemp -d \
+            "${TMPDIR:-/tmp}/qp-managed-emacs.XXXXXX") || \
+            error "unable to create a temporary Emacs wrapper directory."
+        printf -v emacs_quoted '%q' "${emacs_executable}"
+        printf '#!/bin/sh\nexec %s -Q "$@"\n' "${emacs_quoted}" \
+            > "${CLEAN_EMACS_BIN_DIR}/emacs"
+        chmod +x "${CLEAN_EMACS_BIN_DIR}/emacs"
     fi
 }
 

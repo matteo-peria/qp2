@@ -116,6 +116,7 @@ EOF
               git checkout --detach "${TREXIO_RESOLVED_COMMIT}"
               ./autogen.sh
               ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ./configure --prefix="${PREFIX}" --without-hdf5 || exit 1
+              export PATH="${CLEAN_EMACS_BIN_DIR}:\${PATH}"
               (make -j 8 || make) && make check && make -j 8 install
 EOF
             else
@@ -145,6 +146,7 @@ EOF
               git checkout --detach "${TREXIO_RESOLVED_COMMIT}"
               ./autogen.sh
               ${TREXIO_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${TREXIO_H5CC_ENV} ${TREXIO_HDF5_ENV} ./configure --prefix="${PREFIX}" ${TREXIO_HDF5_WITH_ARG} || exit 1
+              export PATH="${CLEAN_EMACS_BIN_DIR}:\${PATH}"
               (make -j 8 || make) && make check && make -j 8 install
 EOF
             else
@@ -174,6 +176,7 @@ EOF
               git checkout --detach "${QMCKL_RESOLVED_COMMIT}"
               ./autogen.sh
               ${CONFIGURE_CC_ENV} ${CONFIGURE_FC_ENV} ${CONFIGURE_F77_ENV} ${CONFIGURE_CFLAGS_ENV} ${CONFIGURE_FCFLAGS_ENV} ${CONFIGURE_FFLAGS_ENV} ${CONFIGURE_BLAS_ENV} ${CONFIGURE_LAPACK_ENV} ./configure --prefix="${PREFIX}" --enable-hpc --disable-doc || exit 1
+              export PATH="${CLEAN_EMACS_BIN_DIR}:\${PATH}"
               (make -j 8 || make) && make check && make install
 EOF
             else
