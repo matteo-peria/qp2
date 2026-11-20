@@ -1,5 +1,61 @@
 # Package installation recipes for configure_managed.
 
+function package_is_usable() {
+    case "$1" in
+        autoconf)
+            autoconf_is_usable
+            ;;
+        cmake)
+            command -v cmake > /dev/null 2>&1
+            ;;
+        zlib)
+            [[ $(check_zlib) = found ]]
+            ;;
+        ninja)
+            [[ -x ${QP_ROOT}/bin/ninja ]]
+            ;;
+        zeromq)
+            [[ $(check_zeromq) = found ]]
+            ;;
+        f77zmq)
+            [[ $(check_f77zmq) = found ]]
+            ;;
+        gmp)
+            [[ $(check_gmp) = found ]]
+            ;;
+        ocaml)
+            command -v ocamlc > /dev/null 2>&1
+            ;;
+        docopt)
+            python3 -c 'import docopt' > /dev/null 2>&1
+            ;;
+        resultsFile)
+            python3 -c 'import resultsFile' > /dev/null 2>&1
+            ;;
+        bats)
+            [[ -x ${QP_ROOT}/bin/bats ]]
+            ;;
+        openblas)
+            [[ $(check_blas_lapack) = found ]]
+            ;;
+        hdf5)
+            [[ $(check_hdf5) = found ]]
+            ;;
+        trexio|trexio-nohdf5)
+            [[ $(check_trexio) = found ]]
+            ;;
+        qmckl)
+            [[ $(check_qmckl) = found ]]
+            ;;
+        simple_gpu)
+            [[ $(check_simple_gpu) = found ]]
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 function install_requested_packages() {
     for PACKAGE in ${PACKAGES} ; do
 
@@ -18,6 +74,12 @@ function install_requested_packages() {
             continue
         elif [[ ${PACKAGE} = qmckl && -n ${EXTERNAL_QMCKL_PREFIX} ]] ; then
             echo "Using external QMCkl: ${EXTERNAL_QMCKL_PREFIX}"
+            continue
+        fi
+
+        if [[ ${REQUESTED_PACKAGES} = all ]] && \
+                package_is_usable "${PACKAGE}" ; then
+            echo "Using existing ${PACKAGE}; dependency probe succeeded."
             continue
         fi
 

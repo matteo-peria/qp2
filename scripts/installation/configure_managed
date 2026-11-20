@@ -72,7 +72,8 @@ Options:
                     no support will be provided for the installation of
                     dependencies. A package-only install skips full-stack
                     validation and QP build configuration. Use -i all to
-                    install and validate the complete stack. When -c is
+                    install and validate the complete stack; usable
+                    dependencies are detected and skipped. When -c is
                     omitted, the remembered configuration is reused.
   -g [amd|nvidia|intel|none]  Choose GPU acceleration
   --with-hdf5 <path>      HDF5 installation prefix to pass to TREXIO when it
@@ -562,6 +563,12 @@ QMCKL_RESOLVED_COMMIT=""
 if [[ -f ${DEPENDENCY_SELECTION} ]] ; then
     source "${DEPENDENCY_SELECTION}"
 fi
+SAVED_TREXIO_SOURCE="${TREXIO_SOURCE}"
+SAVED_TREXIO_GIT_REF="${TREXIO_GIT_REF:-}"
+SAVED_TREXIO_RESOLVED_COMMIT="${TREXIO_RESOLVED_COMMIT:-}"
+SAVED_QMCKL_SOURCE="${QMCKL_SOURCE}"
+SAVED_QMCKL_GIT_REF="${QMCKL_GIT_REF:-}"
+SAVED_QMCKL_RESOLVED_COMMIT="${QMCKL_RESOLVED_COMMIT:-}"
 if [[ ${EXTERNAL_HDF5_FROM_COMMAND} = 1 ]] ; then
     EXTERNAL_HDF5_PREFIX="${REQUESTED_EXTERNAL_HDF5_PREFIX}"
 fi
@@ -666,7 +673,15 @@ case ${TREXIO_SOURCE_REQUEST} in
     git)
         TREXIO_SOURCE=git
         TREXIO_GIT_REF="${REQUESTED_TREXIO_GIT_REF}"
-        TREXIO_RESOLVED_COMMIT=""
+        if [[ ${REQUESTED_PACKAGES} = all || -z ${REQUESTED_PACKAGES} || \
+              " ${REQUESTED_PACKAGES} " = *" trexio "* || \
+              " ${REQUESTED_PACKAGES} " = *" trexio-nohdf5 "* || \
+              ${SAVED_TREXIO_SOURCE} != git || \
+              ${SAVED_TREXIO_GIT_REF} != "${TREXIO_GIT_REF}" ]] ; then
+            TREXIO_RESOLVED_COMMIT=""
+        else
+            TREXIO_RESOLVED_COMMIT="${SAVED_TREXIO_RESOLVED_COMMIT}"
+        fi
         ;;
 esac
 case ${QMCKL_SOURCE_REQUEST} in
@@ -679,7 +694,14 @@ case ${QMCKL_SOURCE_REQUEST} in
     git)
         QMCKL_SOURCE=git
         QMCKL_GIT_REF="${REQUESTED_QMCKL_GIT_REF}"
-        QMCKL_RESOLVED_COMMIT=""
+        if [[ ${REQUESTED_PACKAGES} = all || -z ${REQUESTED_PACKAGES} || \
+              " ${REQUESTED_PACKAGES} " = *" qmckl "* || \
+              ${SAVED_QMCKL_SOURCE} != git || \
+              ${SAVED_QMCKL_GIT_REF} != "${QMCKL_GIT_REF}" ]] ; then
+            QMCKL_RESOLVED_COMMIT=""
+        else
+            QMCKL_RESOLVED_COMMIT="${SAVED_QMCKL_RESOLVED_COMMIT}"
+        fi
         ;;
 esac
 
@@ -742,14 +764,16 @@ function autoconf_is_usable() {
 
 if [[ ${TREXIO_SOURCE} = git && -z ${EXTERNAL_TREXIO_PREFIX} ]] && \
         { package_requested trexio || package_requested trexio-nohdf5 || \
-          -z ${PACKAGES}; } ; then
+          { package_requested qmckl && \
+            [[ -z ${TREXIO_RESOLVED_COMMIT} ]]; } || \
+          [[ -z ${PACKAGES} ]]; } ; then
     TREXIO_RESOLVED_COMMIT=$(resolve_git_ref \
                                  https://github.com/TREX-CoE/trexio.git \
                                  "${TREXIO_GIT_REF}") || \
         error "unable to resolve TREXIO Git ref ${TREXIO_GIT_REF}."
 fi
 if [[ ${QMCKL_SOURCE} = git && -z ${EXTERNAL_QMCKL_PREFIX} ]] && \
-        { package_requested qmckl || -z ${PACKAGES}; } ; then
+        { package_requested qmckl || [[ -z ${PACKAGES} ]]; } ; then
     QMCKL_RESOLVED_COMMIT=$(resolve_git_ref \
                                 https://github.com/TREX-CoE/qmckl.git \
                                 "${QMCKL_GIT_REF}") || \
