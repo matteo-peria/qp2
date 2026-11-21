@@ -17,15 +17,13 @@ subroutine rh_tcscf_diis()
   double precision               :: level_shift_save, rate_th
   double precision               :: t0, t1
   double precision               :: er_DIIS, er_delta, er_save
-  double precision               :: best_residual, trial_residual
+  double precision               :: trial_residual
   double precision               :: rcond
   double precision, allocatable  :: coefficients(:)
   double precision, allocatable  :: fock_before_diis(:,:)
   double precision, allocatable  :: fock_extrapolated(:,:)
   double precision, allocatable  :: mo_r_coef_save(:,:)
   double precision, allocatable  :: mo_l_coef_save(:,:)
-  double precision, allocatable  :: mo_r_coef_best(:,:)
-  double precision, allocatable  :: mo_l_coef_best(:,:)
 
   logical, external              :: qp_stop
 
@@ -38,8 +36,6 @@ subroutine rh_tcscf_diis()
 
   allocate(mo_r_coef_save(ao_num,mo_num))
   allocate(mo_l_coef_save(ao_num,mo_num))
-  allocate(mo_r_coef_best(ao_num,mo_num))
-  allocate(mo_l_coef_best(ao_num,mo_num))
   allocate(fock_before_diis(ao_num,ao_num))
   allocate(fock_extrapolated(ao_num,ao_num))
   mo_l_coef_save = 0.d0
@@ -151,10 +147,6 @@ subroutine rh_tcscf_diis()
     endif
 
     er_delta = maxval(abs(FQS_SQF_mo)) - er_save
-    best_residual = maxval(abs(FQS_SQF_mo))
-    mo_l_coef_best(1:ao_num,1:mo_num) = mo_l_coef(1:ao_num,1:mo_num)
-    mo_r_coef_best(1:ao_num,1:mo_num) = mo_r_coef(1:ao_num,1:mo_num)
-
     n_retry = 0
     if((er_delta > rate_th * er_save) .and. (it > 1)) then
       print *, ' big or bad step '
@@ -162,51 +154,39 @@ subroutine rh_tcscf_diis()
 
       ! Discard entries belonging to the step that just failed, once.
       call diis_reset(history)
-    endif
 
-    do while((er_delta > rate_th * er_save) .and. (it > 1) .and. &
-             (n_retry < max_level_shift_tries))
-      n_retry += 1
+      ! Retry from the incoming orbitals. Keep a trial only if it improves
+      ! their residual; the unextrapolated fallback already failed this test.
+      do while(n_retry < max_level_shift_tries)
+        n_retry += 1
 
-      mo_l_coef(1:ao_num,1:mo_num) = &
-        mo_l_coef_save(1:ao_num,1:mo_num)
-      mo_r_coef(1:ao_num,1:mo_num) = &
-        mo_r_coef_save(1:ao_num,1:mo_num)
-      if(level_shift_TCSCF <= .1d0) then
-        level_shift_TCSCF = 1.d0
-      else
-        level_shift_TCSCF = level_shift_TCSCF * 3.d0
+        mo_l_coef(1:ao_num,1:mo_num) = &
+          mo_l_coef_save(1:ao_num,1:mo_num)
+        mo_r_coef(1:ao_num,1:mo_num) = &
+          mo_r_coef_save(1:ao_num,1:mo_num)
+        if(level_shift_TCSCF <= .1d0) then
+          level_shift_TCSCF = 1.d0
+        else
+          level_shift_TCSCF = level_shift_TCSCF * 3.d0
+        endif
+        TOUCH mo_l_coef mo_r_coef level_shift_TCSCF
+
+        mo_l_coef(1:ao_num,1:mo_num) = &
+          fock_tc_leigvec_ao_balanced(1:ao_num,1:mo_num)
+        mo_r_coef(1:ao_num,1:mo_num) = &
+          fock_tc_reigvec_ao_balanced(1:ao_num,1:mo_num)
+        TOUCH mo_l_coef mo_r_coef
+
+        trial_residual = maxval(abs(FQS_SQF_mo))
+        if(trial_residual < er_save) exit
+      enddo
+
+      if(.not. (trial_residual < er_save)) then
+        mo_l_coef(:,:) = mo_l_coef_save(:,:)
+        mo_r_coef(:,:) = mo_r_coef_save(:,:)
+        TOUCH mo_l_coef mo_r_coef
+        print *, ' TC-SCF retries did not improve the residual; restored incoming orbitals'
       endif
-      TOUCH mo_l_coef mo_r_coef level_shift_TCSCF
-
-      mo_l_coef(1:ao_num,1:mo_num) = &
-        fock_tc_leigvec_ao_balanced(1:ao_num,1:mo_num)
-      mo_r_coef(1:ao_num,1:mo_num) = &
-        fock_tc_reigvec_ao_balanced(1:ao_num,1:mo_num)
-      TOUCH mo_l_coef mo_r_coef
-
-      trial_residual = maxval(abs(FQS_SQF_mo))
-      if(trial_residual < best_residual) then
-        best_residual = trial_residual
-        mo_l_coef_best(1:ao_num,1:mo_num) = mo_l_coef(1:ao_num,1:mo_num)
-        mo_r_coef_best(1:ao_num,1:mo_num) = mo_r_coef(1:ao_num,1:mo_num)
-      endif
-      er_delta = trial_residual - er_save
-
-    enddo
-
-    ! The TC retry criterion is the residual, so keep its best trial instead
-    ! of blindly accepting the last level-shifted orbital pair.
-    if(n_retry > 0) then
-      mo_l_coef(1:ao_num,1:mo_num) = mo_l_coef_best(1:ao_num,1:mo_num)
-      mo_r_coef(1:ao_num,1:mo_num) = mo_r_coef_best(1:ao_num,1:mo_num)
-      TOUCH mo_l_coef mo_r_coef
-      er_delta = maxval(abs(FQS_SQF_mo)) - er_save
-    endif
-
-    if((n_retry == max_level_shift_tries) .and. &
-       (er_delta > rate_th * er_save)) then
-      print *, ' TC-SCF level-shift retry limit reached: ', n_retry
     endif
 
     ! Retries use temporary shifts. Keep the existing per-iteration shift
@@ -284,7 +264,6 @@ subroutine rh_tcscf_diis()
   call write_time(6)
 
   deallocate(mo_r_coef_save, mo_l_coef_save)
-  deallocate(mo_r_coef_best, mo_l_coef_best)
   deallocate(fock_before_diis, fock_extrapolated)
 
   call ezfio_set_tc_scf_tcscf_energy(TC_HF_energy)
