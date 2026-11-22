@@ -12,6 +12,7 @@ module biorthogonal_scaling_module
   integer, parameter, public :: scaling_bad_overlap = 4
   integer, parameter, public :: scaling_nonfinite = 5
   integer, parameter, public :: scaling_overlap_changed = 6
+  integer, parameter :: wide_real = selected_real_kind(18)
 
   public :: balance_biorthogonal_pairs
 
@@ -31,12 +32,15 @@ contains
     double precision, allocatable :: overlap_before(:,:), overlap_after(:,:)
     double precision, allocatable :: left_trial(:,:), right_trial(:,:)
     double precision, allocatable :: scale_trial(:)
+    real(wide_real), allocatable :: metric_wide(:,:)
+    real(wide_real), allocatable :: left_wide(:), right_wide(:)
     double precision :: left_norm_sq, right_norm_sq
     double precision :: left_norm, right_norm, alpha
     double precision :: metric_scale, metric_asymmetry
     double precision :: overlap_scale, overlap_tolerance
     double precision :: offdiag_before, offdiag_after
-    double precision :: diagonal_change
+    real(wide_real) :: overlap_before_diag, overlap_after_diag
+    real(wide_real) :: diagonal_change, overlap_tolerance_wide
     integer :: i, j, n, m
 
     info = scaling_bad_shape
@@ -110,12 +114,30 @@ contains
 
     overlap_scale = max(1.d0, maxval(abs(overlap_before)))
     overlap_tolerance = 100.d0 * epsilon(1.d0) * overlap_scale
-    diagonal_change = 0.d0
+    overlap_tolerance_wide = real(overlap_tolerance, wide_real)
+    diagonal_change = 0._wide_real
     offdiag_before = 0.d0
     offdiag_after = 0.d0
+    allocate(metric_wide(n,n), left_wide(n), right_wide(n))
+    metric_wide = real(metric, wide_real)
     do j = 1, m
+      ! The left and right scales cancel in this overlap. Wider sums keep
+      ! rounding from making a valid rescaling look like a failure.
+      left_wide = real(left(:,j), wide_real)
+      right_wide = real(right(:,j), wide_real)
+      overlap_before_diag = dot_product(left_wide, &
+                              matmul(metric_wide, right_wide))
+      left_wide = real(left_trial(:,j), wide_real)
+      right_wide = real(right_trial(:,j), wide_real)
+      overlap_after_diag = dot_product(left_wide, &
+                             matmul(metric_wide, right_wide))
+      if((.not. ieee_is_finite(overlap_before_diag)) .or. &
+         (.not. ieee_is_finite(overlap_after_diag))) then
+        info = scaling_nonfinite
+        return
+      endif
       diagonal_change = max(diagonal_change, &
-                            abs(overlap_after(j,j) - overlap_before(j,j)))
+                            abs(overlap_after_diag - overlap_before_diag))
       do i = 1, m
         if(i == j) cycle
         offdiag_before = max(offdiag_before, abs(overlap_before(i,j)))
@@ -124,7 +146,7 @@ contains
     enddo
 
     info = scaling_overlap_changed
-    if(diagonal_change > overlap_tolerance) then
+    if(diagonal_change > overlap_tolerance_wide) then
       left_balanced = left
       right_balanced = right
       left_scale = 1.d0
