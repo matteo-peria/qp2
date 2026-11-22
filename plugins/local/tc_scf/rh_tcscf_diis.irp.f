@@ -25,6 +25,8 @@ subroutine rh_tcscf_diis()
   double precision, allocatable  :: mo_r_coef_save(:,:)
   double precision, allocatable  :: mo_l_coef_save(:,:)
 
+  double precision, allocatable  :: x_left(:,:), x_right(:,:)
+  double precision               :: ao_residual
   logical, external              :: qp_stop
 
   PROVIDE level_shift_TCSCF
@@ -40,6 +42,16 @@ subroutine rh_tcscf_diis()
   allocate(fock_extrapolated(ao_num,ao_num))
   mo_l_coef_save = 0.d0
   mo_r_coef_save = 0.d0
+
+  allocate(x_left(ao_num,mo_num), x_right(ao_num,mo_num))
+  if (mo_num == ao_ortho_canonical_num) then
+    x_left = ao_ortho_canonical_coef(:,1:mo_num)
+    x_right = x_left
+  else
+    ! A truncated MO calculation tests only the supplied left/right spaces.
+    call tc_orthogonalize_span(mo_l_coef, x_left)
+    call tc_orthogonalize_span(mo_r_coef, x_right)
+  endif
 
   call diis_initialize(history, ao_num, max_dim_DIIS_TCSCF, info)
   if(info /= diis_success) then
@@ -74,6 +86,9 @@ subroutine rh_tcscf_diis()
   call wall_time(t1)
   write(6, '(I4,1X, F16.10,1X, F16.10,1X, F16.10,1X, F16.10,1X, F16.10,1X, F16.10,1X, F16.10,1X, I4,1X, F8.2)')  &
     it, etc_tot, etc_1e, etc_2e, etc_3e, e_delta, er_DIIS, level_shift_tcscf, history_count, (t1-t0)/60.d0
+
+  call tc_ao_residual_norm(x_left, x_right, ao_residual)
+  write(6,'(A,I5,1X,ES22.14)') ' TC-SCF AO residual ', it, ao_residual
 
   PROVIDE FQS_SQF_ao Fock_matrix_tc_ao_tot
 
@@ -209,7 +224,9 @@ subroutine rh_tcscf_diis()
     e_save           = etc_tot
     er_save          = er_DIIS
 
-    converged = er_DIIS .lt. dsqrt(thresh_tcscf)
+    call tc_ao_residual_norm(x_left, x_right, ao_residual)
+    write(6,'(A,I5,1X,ES22.14)') ' TC-SCF AO residual ', it, ao_residual
+    converged = ao_residual .lt. dsqrt(thresh_tcscf)
     history_count = diis_count(history)
 
     call wall_time(t1)
@@ -227,6 +244,7 @@ subroutine rh_tcscf_diis()
     write(json_unit, json_real_fmt) ' E(1e)          ', etc_1e
     write(json_unit, json_real_fmt) ' E(2e)          ', etc_2e
     write(json_unit, json_real_fmt) ' E(3e)          ', etc_3e
+    write(json_unit, json_real_fmt) ' AO residual    ', ao_residual
     write(json_unit, json_real_fmt) ' delta Energy   ', e_delta
     write(json_unit, json_real_fmt) ' DIIS error     ', er_DIIS
     write(json_unit, json_real_fmt) ' level_shift    ', level_shift_tcscf

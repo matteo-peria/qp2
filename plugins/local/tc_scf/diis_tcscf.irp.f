@@ -145,3 +145,43 @@ END_PROVIDER
 
 ! ---
 
+
+subroutine tc_orthogonalize_span(coef, x)
+  implicit none
+  double precision, intent(in) :: coef(ao_num,mo_num)
+  double precision, intent(out) :: x(ao_num,mo_num)
+  double precision :: scale
+  double precision, allocatable :: gram(:,:)
+  integer :: i, info
+
+  ! Strip arbitrary column scales before forming the overlap matrix.
+  do i=1,mo_num
+    scale = maxval(abs(coef(:,i)))
+    if (scale == 0.d0) error stop 'Empty TC orbital column'
+    x(:,i) = coef(:,i)/scale
+  enddo
+  allocate(gram(mo_num,mo_num))
+  gram = matmul(transpose(x),matmul(ao_overlap,x))
+  call dpotrf('U',mo_num,gram,mo_num,info)
+  if (info /= 0) error stop 'Cannot orthonormalize truncated TC orbital space'
+  call dtrsm('R','U','N','N',ao_num,mo_num,1.d0,gram,mo_num,x,ao_num)
+end
+
+subroutine tc_ao_residual_norm(x_left, x_right, residual)
+  use ieee_arithmetic, only: ieee_is_finite
+  implicit none
+  double precision, intent(in) :: x_left(ao_num,mo_num), x_right(ao_num,mo_num)
+  double precision, intent(out) :: residual
+  double precision, allocatable :: projected(:,:), singular(:), work(:)
+  double precision :: unused_u(1), unused_v(1)
+  integer :: info
+
+  allocate(projected(mo_num,mo_num), singular(mo_num), work(5*mo_num))
+  projected = matmul(transpose(x_left),matmul(FQS_SQF_ao,x_right))
+  if (.not.all(ieee_is_finite(projected))) error stop 'Nonfinite AO residual'
+  ! Only the singular values are needed; LAPACK returns the largest first.
+  call dgesvd('N','N',mo_num,mo_num,projected,mo_num,singular, &
+              unused_u,1,unused_v,1,work,size(work),info)
+  if (info /= 0) error stop 'AO residual singular value calculation failed'
+  residual = singular(1)
+end
